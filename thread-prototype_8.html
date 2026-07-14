@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thread · Ward 7B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=swap" rel="stylesheet">
+<style>
+/* =====================================================
+   THREAD v4
+   · themable (dark default / light)
+   · grid-first with list toggle
+   · full-color square thread cards, text paramount
+   · ambient sentence header (no status bento)
+   · focus-stack handover with reminders
+   · floating pill nav: Patients / End shift
+   · demo script as a distinct mono overlay
+   ===================================================== */
+:root{
+  --bg:#141110; --card:#1F1B18; --card2:#2A2521; --line:#372F29;
+  --tx:#F0EAE0; --mut:#9C9385; --ink:#1C1712;
+  --cobalt:#2E56E8; --cobalt-soft:#5C7CF0; --royal:#14225E; --royaltx:#DCE3FF;
+  --copper:#A84E1D; --apricot:#E0956A; --redg:#B23A24; --amber:#D9A430; --sage:#8FAE7E;
+  --shadow:0 12px 32px rgba(0,0,0,.5);
+  --r:22px; --r-s:15px;
+}
+html[data-theme="light"]{
+  --bg:#F1EDE4; --card:#FFFFFF; --card2:#E9E3D7; --line:#DCD4C5;
+  --tx:#1C1712; --mut:#6E675C;
+  --royal:#1A2A6E; --royaltx:#E4E9FF;
+  --shadow:0 12px 28px rgba(60,50,40,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Instrument Sans',system-ui,sans-serif;
+  background:var(--bg);color:var(--tx);
+  font-size:15px;line-height:1.5;font-weight:500;
+  -webkit-font-smoothing:antialiased;
+  transition:background .2s,color .2s;
+}
+button{font:inherit;cursor:pointer;color:inherit;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+:focus-visible{outline:3px solid var(--apricot);outline-offset:3px;border-radius:8px;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:20px;line-height:1;display:inline-block;vertical-align:-4px;font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24;}
+
+/* ---------- shell / top bar ---------- */
+.shell{max-width:1240px;margin:0 auto;padding:0 22px 150px;}
+header.appbar{
+  position:sticky;top:0;z-index:45;background:var(--bg);
+  display:flex;align-items:center;gap:14px;
+  padding:15px 0 12px;border-bottom:1px solid var(--line);
+}
+.logo{font-weight:700;font-size:21px;letter-spacing:-0.03em;display:flex;align-items:center;gap:9px;}
+.logo .knot{width:14px;height:14px;border-radius:50%;background:var(--bg);border:5px solid var(--copper);}
+.wardtag{font-weight:600;color:var(--mut);font-size:11.5px;letter-spacing:.1em;}
+.topright{margin-left:auto;display:flex;align-items:center;gap:10px;position:relative;}
+.userchip{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 14px 5px 5px;font-weight:600;font-size:12.5px;}
+.nav-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--ink);font-weight:700;font-size:11.5px;}
+.nav-av.priya{background:#9FB4FF;} .nav-av.tom{background:#8FE0C0;}
+.iconbtn{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;}
+.backlink{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--tx);text-decoration:none;flex:none;}
+.backlink:hover{background:var(--card2);}
+.backlink .ms{font-size:20px;}
+.iconbtn .ms{font-size:20px;}
+
+/* settings dropdown */
+.menu{
+  position:absolute;top:52px;right:0;width:300px;background:var(--card);
+  border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);
+  padding:10px;z-index:70;display:none;
+}
+.menu.open{display:block;}
+.menu .mrow{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:11px;border:none;background:none;font-weight:600;font-size:13.5px;text-align:left;}
+.menu .mrow:hover{background:var(--card2);}
+.menu .mrow .ms{font-size:19px;color:var(--mut);}
+.menu .mlabel{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);padding:10px 12px 4px;}
+.seg{display:flex;background:var(--card2);border-radius:11px;padding:3px;gap:3px;margin-left:auto;}
+.seg button{border:none;background:none;border-radius:8px;padding:6px 11px;font-weight:700;font-size:11.5px;color:var(--mut);}
+.seg button[aria-pressed="true"]{background:var(--cobalt);color:#fff;}
+
+/* ---------- ambient header (non-bento, minimises) ---------- */
+.ambient{
+  position:sticky;top:60px;z-index:40;background:var(--bg);
+  padding:18px 0 14px;border-bottom:1px solid var(--line);margin-bottom:20px;
+  transition:padding .18s;
+}
+.ambient .aline{font-size:clamp(19px,2.4vw,27px);font-weight:700;letter-spacing:-0.03em;line-height:1.3;transition:font-size .18s;}
+.ambient .aline b{color:var(--cobalt-soft);font-weight:700;}
+.ambient .aline .warm{color:var(--apricot);}
+.ambient .asub{color:var(--mut);font-weight:500;font-size:13px;margin-top:5px;transition:opacity .18s, max-height .18s;max-height:40px;overflow:hidden;}
+.ambient.mini{padding:9px 0 8px;}
+.ambient.mini .aline{font-size:16px;}
+.ambient.mini .asub{opacity:0;max-height:0;margin:0;}
+
+/* ---------- type ---------- */
+h1.pagetitle{font-size:clamp(22px,2.8vw,30px);font-weight:700;letter-spacing:-0.03em;margin:4px 0 2px;}
+.pagesub{color:var(--mut);font-weight:500;margin-bottom:16px;font-size:13px;max-width:82ch;}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);display:inline-flex;align-items:center;gap:6px;}
+.lbl .ms{font-size:14px;vertical-align:-3px;}
+.num{font-weight:700;letter-spacing:-0.04em;line-height:.95;font-variant-numeric:tabular-nums;}
+.section-label{font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);margin:24px 0 12px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line);}
+.section-label .viewtog{margin-left:auto;display:flex;gap:4px;}
+.screen{display:none;} .screen.active{display:block;}
+.stack{display:flex;flex-direction:column;gap:12px;}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:13px;font-weight:700;letter-spacing:.02em;font-size:13.5px;padding:12px 18px;min-height:46px;background:var(--cobalt);color:#fff;transition:filter .1s,transform .05s;}
+.btn:hover{filter:brightness(1.1);} .btn:active{transform:scale(.985);}
+.btn.copper{background:var(--copper);}
+.btn.royal{background:var(--royal);color:var(--royaltx);}
+.btn.quiet{background:var(--card2);color:var(--tx);}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--tx);}
+.btn.onink{background:rgba(20,16,12,.85);color:#fff;}
+.btn.big{width:100%;font-size:14.5px;min-height:54px;}
+.btn:disabled{background:var(--card2);color:var(--mut);cursor:not-allowed;filter:none;}
+.btn .ms{font-size:18px;}
+.whydisabled{font-size:12px;font-weight:600;color:var(--apricot);margin-top:8px;display:flex;gap:6px;align-items:flex-start;}
+.whydisabled .ms{font-size:15px;margin-top:1px;}
+
+/* ---------- patient cards ---------- */
+.pgrid{display:grid;gap:14px;grid-template-columns:repeat(4,1fr);}
+@media(max-width:1100px){.pgrid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:860px){.pgrid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:540px){.pgrid{grid-template-columns:1fr;}}
+.pgrid.list{grid-template-columns:1fr;gap:10px;}
+.pcard{
+  border-radius:var(--r);padding:16px;text-align:left;border:none;
+  background:var(--pc,#ccc);color:var(--ink);
+  display:flex;flex-direction:column;gap:12px;min-height:220px;
+  transition:transform .12s,box-shadow .12s;
+}
+.pcard:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+.pgrid.list .pcard{flex-direction:row;align-items:center;min-height:0;padding:13px 16px;gap:14px;flex-wrap:wrap;}
+.pcard .top{display:flex;align-items:flex-start;gap:11px;width:100%;}
+.avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-weight:700;font-size:14px;background:var(--ink);color:var(--pc,#fff);}
+.avatar.sm{width:22px;height:22px;font-size:9px;}
+.pname{font-weight:700;font-size:17px;letter-spacing:-0.02em;line-height:1.15;}
+.pdx{font-size:11.5px;font-weight:600;opacity:.82;line-height:1.4;margin-top:2px;}
+.bedanchor{margin-left:auto;flex-shrink:0;background:var(--ink);color:var(--pc,#fff);border-radius:13px;padding:7px 11px 6px;text-align:center;line-height:1;}
+.bedanchor .b{font-size:8px;font-weight:700;letter-spacing:.18em;display:block;opacity:.8;margin-bottom:3px;}
+.bedanchor .n{font-size:21px;font-weight:700;}
+.pcard .mid{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:auto;width:100%;}
+.pgrid.list .pcard .mid{margin:0 0 0 auto;width:auto;gap:20px;flex-wrap:wrap;justify-content:flex-end;}
+@media(max-width:520px){.pgrid.list .pcard .mid{margin:0;width:100%;justify-content:space-between;}}
+.newsmini{display:flex;align-items:flex-end;gap:9px;}
+.newsmini .nv{font-size:34px;font-weight:700;letter-spacing:-0.05em;line-height:.9;}
+.newsmini .nk{font-size:8.5px;font-weight:700;letter-spacing:.16em;opacity:.8;display:block;margin-bottom:4px;}
+.pcard svg.spark{width:80px;height:24px;}
+.ringwrap{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.ringwrap .rk{font-size:8px;font-weight:700;letter-spacing:.16em;opacity:.8;}
+.pflag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:7px;padding:4px 8px;background:var(--ink);color:var(--pc,#fff);}
+.pflag .ms{font-size:12px;}
+.pcard .foot{display:flex;gap:6px;flex-wrap:wrap;width:100%;}
+.pgrid.list .pcard .foot{width:auto;}
+
+/* ---------- THREAD CARDS · full color squares, text paramount ---------- */
+.tgrid{display:grid;gap:13px;grid-template-columns:repeat(3,1fr);}
+@media(max-width:1100px){.tgrid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.tgrid{grid-template-columns:1fr;}}
+.tgrid.list{grid-template-columns:1fr;}
+.tcard{
+  border-radius:var(--r);padding:18px;border:none;position:relative;
+  display:flex;flex-direction:column;gap:12px;min-height:210px;
+  color:#fff;text-align:left;
+}
+.tgrid.list .tcard{min-height:0;}
+.tcard.comparison{background:var(--cobalt);}
+.tcard.pattern{background:#2333B8;}
+.tcard.concern{background:var(--redg);}
+.tcard.priority{background:var(--amber);color:var(--ink);}
+.tcard.context{background:var(--apricot);color:var(--ink);}
+.tcard .thead{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.92;}
+.tcard .thead .ms{font-size:16px;}
+.tcard .thead .right{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:9.5px;letter-spacing:.1em;opacity:.85;}
+.livedot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block;}
+.tcard .tmsg{font-size:clamp(18px,1.8vw,22px);font-weight:700;letter-spacing:-0.02em;line-height:1.32;flex:1;}
+.tgrid.list .tcard .tmsg{font-size:18px;}
+.tcard .tfoot{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;opacity:.92;}
+.tcard .tfoot .detbtn{margin-left:auto;border:none;background:rgba(0,0,0,.22);color:inherit;border-radius:10px;padding:8px 13px;font-weight:700;font-size:11px;letter-spacing:.06em;display:inline-flex;gap:6px;align-items:center;min-height:34px;}
+.tcard.priority .detbtn,.tcard.context .detbtn{background:rgba(255,255,255,.4);}
+.tdetails{background:rgba(0,0,0,.24);border-radius:14px;padding:12px 14px;font-size:12px;font-weight:600;display:none;}
+.tcard.priority .tdetails,.tcard.context .tdetails{background:rgba(255,255,255,.42);}
+.tdetails.open{display:block;}
+.tdetails .drow{display:flex;justify-content:space-between;gap:10px;padding:4px 0;}
+.tdetails .drow span:first-child{opacity:.8;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;font-weight:700;padding-top:2px;}
+.tdetails .dact{display:flex;gap:8px;margin-top:9px;}
+.tdetails .dact .btn{flex:1;min-height:40px;padding:8px 12px;font-size:11.5px;background:rgba(0,0,0,.3);}
+.tcard.priority .dact .btn,.tcard.context .dact .btn{background:rgba(20,16,12,.85);color:#fff;}
+.tdot{width:11px;height:11px;border-radius:3.5px;display:inline-block;}
+.tdot.concern{background:var(--redg);} .tdot.priority{background:var(--amber);}
+.tdot.pattern{background:#2333B8;} .tdot.comparison{background:var(--cobalt);} .tdot.context{background:var(--apricot);}
+
+/* ---------- vitals ---------- */
+.vgrid{display:grid;gap:12px;grid-template-columns:repeat(6,1fr);}
+@media(max-width:1100px){.vgrid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:560px){.vgrid{grid-template-columns:repeat(2,1fr);}}
+.vgrid.list{grid-template-columns:1fr;}
+.vg3{grid-template-columns:repeat(3,1fr);}
+@media(max-width:560px){.vg3{grid-template-columns:repeat(2,1fr);}}
+.vgrid.vg3.list{grid-template-columns:1fr;}
+.vtile{border-radius:var(--r-s);padding:13px 14px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px;min-height:102px;justify-content:space-between;}
+.vgrid.list .vtile{flex-direction:row;align-items:center;min-height:0;}
+.vtile .num{font-size:23px;} .vtile .unit{font-size:10px;font-weight:700;color:var(--mut);margin-left:2px;}
+.vtile.alert{background:#39170C;border-color:var(--copper);}
+.vtile.alert *{color:#F3C9B2;}
+html[data-theme="light"] .vtile.alert{background:#F6DCCB;}
+html[data-theme="light"] .vtile.alert *{color:#7A3512;}
+svg.spark{display:block;}
+.fluid{display:flex;height:11px;border-radius:7px;overflow:hidden;background:var(--card2);min-width:110px;}
+.fluid .in{background:var(--cobalt);} .fluid .out{background:var(--copper);}
+.fluidkey{display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:var(--mut);letter-spacing:.06em;}
+
+/* shift pulse · fixed circles */
+.pulse{display:flex;gap:0;justify-content:space-between;align-items:center;padding:4px 2px;}
+.pulse i{width:9px;height:9px;border-radius:50%;background:var(--card2);flex:none;}
+.pulse i.on{width:13px;height:13px;}
+.tilebox{border-radius:var(--r);padding:18px;background:var(--card);border:1px solid var(--line);}
+.legend-obs{color:#5C7CF0;}
+.legend-thr{color:var(--apricot);}
+html[data-theme="light"] .legend-obs{color:#2340B8;}
+html[data-theme="light"] .legend-thr{color:#9A4715;}
+
+/* ---------- patient header band ---------- */
+.pheader{border-radius:var(--r);padding:18px 20px;background:var(--pc);color:var(--ink);display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
+.pheader .avatar{width:54px;height:54px;font-size:17px;}
+.pheader .pname{font-size:clamp(19px,2.4vw,26px);}
+.pheader .right{margin-left:auto;display:flex;align-items:center;gap:14px;}
+.pbody{display:grid;gap:14px;grid-template-columns:5fr 7fr;align-items:start;margin-top:14px;}
+@media(max-width:960px){.pbody{grid-template-columns:1fr;}}
+.ai{background:var(--royal);border-radius:var(--r);padding:18px 20px;color:var(--royaltx);}
+.ai ul{list-style:none;margin-top:10px;}
+.ai li{font-weight:600;font-size:13.5px;padding:6px 0 6px 26px;position:relative;line-height:1.45;}
+.ai li .ms{position:absolute;left:0;top:7px;font-size:15px;color:var(--cobalt-soft);}
+
+/* ---------- handover focus stack ---------- */
+.hostage{position:relative;max-width:640px;margin:6px auto 0;min-height:320px;}
+.hostage .tcard{position:absolute;inset:0 auto auto 0;width:100%;min-height:280px;transition:transform .18s,opacity .18s,filter .18s;}
+.hostage .tcard.back1{transform:translateY(-16px) scale(.955);filter:brightness(.72);z-index:1;}
+.hostage .tcard.back2{transform:translateY(-30px) scale(.915);filter:brightness(.5);z-index:0;}
+.hostage .tcard.front{position:relative;z-index:2;box-shadow:var(--shadow);}
+.hodeck-count{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);text-align:center;margin-top:12px;}
+.hoactions{display:flex;gap:10px;max-width:640px;margin:14px auto 0;}
+.hoactions .btn{flex:1;}
+.ho-progress{display:flex;gap:6px;margin:6px 0 14px;}
+.ho-progress span{flex:1;height:6px;border-radius:99px;background:var(--card2);}
+.ho-progress span.done{background:var(--cobalt);} .ho-progress span.now{background:var(--apricot);}
+
+/* ---------- banners / toast / modal ---------- */
+.banner{border-radius:var(--r);padding:14px 17px;font-weight:600;font-size:13px;margin-bottom:13px;display:flex;gap:11px;align-items:center;flex-wrap:wrap;}
+.banner .ms{font-size:19px;flex-shrink:0;}
+.banner.warn{background:#33230B;color:#E9C87E;}
+.banner.alert{background:#3A160E;color:#EFA184;}
+.banner.info{background:var(--royal);color:var(--royaltx);}
+html[data-theme="light"] .banner.warn{background:#F2E3BC;color:#6B5100;}
+html[data-theme="light"] .banner.alert{background:#F6D3C6;color:#8E2415;}
+.banner .btn{margin-left:auto;padding:8px 14px;min-height:40px;font-size:11.5px;}
+#toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--tx);color:var(--bg);font-weight:700;font-size:13px;border-radius:14px;padding:13px 21px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:90;max-width:min(580px,90vw);text-align:center;}
+#toast.show{opacity:1;}
+.overlay{position:fixed;inset:0;background:rgba(8,6,4,.72);z-index:80;display:none;align-items:center;justify-content:center;padding:20px;}
+.overlay.show{display:flex;}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:22px;max-width:640px;width:100%;padding:24px;max-height:88vh;overflow:auto;}
+.modal h3{font-size:19px;font-weight:700;letter-spacing:-0.02em;margin-bottom:7px;}
+.modal p{font-weight:500;color:var(--mut);font-size:13px;margin-bottom:13px;}
+.epr{background:var(--bg);border:1.5px dashed var(--cobalt-soft);border-radius:var(--r-s);padding:15px;font-size:13px;font-weight:500;margin:10px 0 16px;color:var(--tx);}
+.epr b{font-weight:700;}
+.btnrow{display:flex;gap:11px;flex-wrap:wrap;}
+.btnrow .btn{flex:1;}
+
+/* ---------- floating pill nav ---------- */
+.fab{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;
+  display:flex;align-items:center;gap:4px;background:var(--card);
+  border:1px solid var(--line);border-radius:99px;padding:6px;box-shadow:var(--shadow);
+}
+.fab .fbtn{border:none;background:none;border-radius:99px;padding:11px 20px;font-weight:700;font-size:13px;display:inline-flex;gap:8px;align-items:center;min-height:48px;color:var(--mut);}
+.fab .fbtn[aria-current="true"]{background:var(--cobalt);color:#fff;}
+.fab .fbtn.end{color:var(--tx);}
+.fab .fbtn .ms{font-size:19px;}
+.fab .fdivider{width:1px;height:26px;background:var(--line);}
+.fab .homorph{background:var(--copper);color:#fff;}
+
+/* ---------- demo script overlay · distinct mono ---------- */
+.script{
+  position:fixed;left:18px;bottom:18px;z-index:65;max-width:340px;
+  background:#0E0C0A;color:#E8E2D6;border:1.5px dashed var(--apricot);
+  border-radius:16px;padding:14px 16px;font-family:'DM Mono',monospace;
+  box-shadow:var(--shadow);
+}
+html[data-theme="light"] .script{background:#221D18;}
+.script .stag{font-size:9.5px;letter-spacing:.22em;color:var(--apricot);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
+.script .stag button{border:none;background:none;color:var(--apricot);font-family:inherit;font-size:16px;min-width:34px;min-height:34px;display:grid;place-items:center;border-radius:8px;margin:-8px -8px -8px 0;}
+.script h2{font-size:12.5px;font-weight:500;line-height:1.5;margin-bottom:4px;color:#fff;}
+.script p{font-size:11px;line-height:1.65;color:#B5AC9D;}
+@media(max-width:760px){.script{left:12px;right:12px;max-width:none;bottom:84px;}}
+
+/* misc */
+.eventcard{border-radius:var(--r);background:#39170C;border:1.5px solid var(--copper);padding:18px;margin-bottom:14px;}
+html[data-theme="light"] .eventcard{background:#F6DCCB;}
+.eventcard h3{color:var(--apricot);font-weight:700;font-size:15.5px;display:flex;gap:9px;align-items:center;margin-bottom:7px;}
+html[data-theme="light"] .eventcard h3{color:#8E3A12;}
+.eventcard p{font-weight:600;font-size:13.5px;margin-bottom:13px;}
+.relayline{display:flex;align-items:center;margin:16px 0 4px;flex-wrap:wrap;}
+.relaynode{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px;}
+.relaynode .dotk{width:15px;height:15px;border-radius:50%;border:5px solid var(--copper);background:var(--bg);}
+.relaynode .rl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);text-align:center;line-height:1.5;}
+.relayseg{flex:1;height:3px;background:var(--copper);min-width:18px;transform:translateY(-10px);}
+.hero{background:var(--cobalt);color:#fff;border-radius:26px;padding:30px;margin-bottom:14px;position:relative;overflow:hidden;display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:center;}
+@media(max-width:820px){.hero{grid-template-columns:1fr;}}
+.hero h1{font-size:clamp(26px,3.6vw,42px);font-weight:700;line-height:1.04;letter-spacing:-0.04em;}
+.hero p{font-weight:600;font-size:13.5px;opacity:.92;margin-top:10px;max-width:56ch;}
+.hero img{width:100%;height:220px;object-fit:cover;border-radius:16px;display:block;}
+.rolegrid{display:grid;gap:13px;grid-template-columns:repeat(2,1fr);margin-top:16px;}
+@media(max-width:760px){.rolegrid{grid-template-columns:1fr;}}
+.rolecard{text-align:left;display:flex;gap:14px;align-items:center;padding:18px;border-radius:var(--r);border:none;color:var(--ink);transition:transform .12s;}
+.rolecard:hover{transform:translateY(-3px);}
+.rolecard h3{font-size:16px;font-weight:700;}
+.rolecard p{font-weight:600;font-size:11.5px;margin-top:2px;opacity:.82;}
+.rolecard .ms{margin-left:auto;}
+
+/* v5 additions */
+.pname,.pdx{display:block;}
+.timg{width:100%;height:112px;object-fit:cover;border-radius:12px;display:block;}
+.tgrid.list .timg{height:88px;max-width:220px;}
+.decide{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;}
+.decide .btn{min-height:48px;padding:8px 10px;font-size:12px;line-height:1.15;}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;font-weight:600;color:var(--mut);margin:12px 0 0;}
+.legend span{display:inline-flex;gap:6px;align-items:flex-start;max-width:34ch;}
+.legend .ms{font-size:15px;margin-top:1px;flex:none;}
+#newfab{position:fixed;right:18px;bottom:90px;z-index:58;border-radius:99px;padding:14px 22px;box-shadow:var(--shadow);display:none;}
+.hocard{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;}
+.hocard .hleft{min-width:0;display:flex;flex-direction:column;gap:8px;}
+.hocard .hacts{display:flex;flex-direction:column;gap:8px;}
+.hocard .hacts .btn{min-height:44px;padding:9px 14px;font-size:12px;}
+.hp-strip{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--pc);color:var(--ink);border-radius:var(--r);padding:12px 16px;margin-bottom:12px;}
+.hp-strip .avatar{width:38px;height:38px;font-size:12px;}
+body.lock{overflow:hidden;}
+.segbig{display:flex;background:var(--card2);border-radius:12px;padding:3px;gap:3px;}
+.segbig button{border:none;background:none;border-radius:9px;padding:8px 14px;font-weight:700;font-size:12px;color:var(--mut);min-height:38px;}
+.segbig button[aria-pressed="true"]{background:var(--cobalt);color:#fff;}
+@media(max-width:1100px){
+  .tcard .tmsg{font-size:18px;}
+  .tgrid.list .tcard .tmsg{font-size:16.5px;}
+  h1.pagetitle{font-size:22px;}
+  .ambient .aline{font-size:19px;}
+  .pcard{min-height:198px;}
+  .pname{font-size:16px;}
+  .pheader .pname{font-size:19px;}
+  .tcard{padding:15px;min-height:190px;}
+}
+@media(max-width:640px){.decide{grid-template-columns:1fr 1fr;} .decide .btn:last-child{grid-column:1/-1;}}
+
+
+/* v6 · neumorphic surfaces, tooltips, affordances */
+:root{--shdark:#0b0906;--shlight:#241f16;}
+html[data-theme="light"]{--bg:#EDE9E0;--card:#EDE9E0;--card2:#E0DBCD;--line:#D6D0C1;--shdark:#d2ccbd;--shlight:#ffffff;}
+.pcard,.tilebox,.vtile,.hp-strip,.pheader,.menu,.fab{
+  background:var(--bg);border:none;
+  box-shadow:9px 9px 18px var(--shdark),-9px -9px 18px var(--shlight);
+}
+.pcard{color:var(--tx);}
+.pcard:hover{transform:translateY(-3px);box-shadow:12px 12px 22px var(--shdark),-10px -10px 20px var(--shlight);}
+.avatar{background:var(--tx);color:var(--bg);}
+.bedanchor{background:transparent;color:var(--tx);box-shadow:inset 4px 4px 9px var(--shdark),inset -4px -4px 9px var(--shlight);}
+.pflag{background:var(--tx);color:var(--bg);}
+.pdx{color:var(--mut);opacity:1;}
+.newsmini .nk,.ringwrap .rk{color:var(--mut);opacity:1;}
+.vtile.alert{background:var(--bg);box-shadow:inset 5px 5px 10px var(--shdark),inset -5px -5px 10px var(--shlight);}
+.vtile.alert .lbl,.vtile.alert .num,.vtile.alert .ms{color:var(--redg);}
+.btn.warn{background:var(--amber);color:var(--ink);}
+.fab .homorph{background:var(--cobalt);}
+details.tilebox summary{display:flex;align-items:center;gap:8px;}
+details.tilebox .chev{margin-left:auto;transition:transform .15s;font-size:20px;color:var(--mut);}
+details.tilebox[open] .chev{transform:rotate(180deg);}
+[data-tip]{position:relative;}
+[data-tip]::after{
+  content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%);
+  background:var(--tx);color:var(--bg);font-size:11px;font-weight:600;line-height:1.5;
+  padding:8px 11px;border-radius:10px;width:max-content;max-width:230px;white-space:normal;text-align:left;
+  letter-spacing:.01em;text-transform:none;opacity:0;pointer-events:none;transition:opacity .12s;z-index:40;
+}
+[data-tip]:hover::after,[data-tip]:focus-visible::after,[data-tip].tipon::after{opacity:1;}
+.pulse i{width:9px;height:9px;border-radius:50%;background:var(--card2);flex:none;}
+.pulse button{border:none;flex:none;cursor:pointer;min-height:0;width:34px;height:34px;padding:10px;border-radius:50%;background-clip:content-box;margin:-10px -6px;}
+.pulse button:focus-visible{outline:2.5px solid var(--apricot);outline-offset:2px;}
+
+.pheader{padding:14px 18px;gap:13px;}
+.pheader .avatar{width:46px;height:46px;font-size:14px;}
+.pheader .pname{font-size:clamp(17px,2vw,22px);}
+
+/* ===== EPR integration view (embedded concept) ===== */
+.eprv{--ebg:#EDF0F4;--epanel:#FFFFFF;--eline:#D6DCE5;--etx:#1E2936;--emut:#5C6B7E;--eblue:#2F5FA5;--etop:#24466E;--ealert:#B3261E;}
+.eprv{font-family:'Inter','Instrument Sans',system-ui,sans-serif;}
+.eprv .lede{color:var(--mut);font-weight:500;font-size:13.5px;max-width:80ch;margin-bottom:14px;}
+.eprv .frame{border:1px solid var(--eline);border-radius:16px;overflow:hidden;max-width:100%;box-shadow:var(--shadow);position:relative;background:var(--ebg);}
+.eprv .etop{background:var(--etop);color:#fff;display:flex;align-items:center;gap:12px;padding:8px 13px;font-size:12px;flex-wrap:wrap;}
+.eprv .etop .sys{font-weight:700;letter-spacing:.03em;display:flex;gap:7px;align-items:center;}
+.eprv .etop .env{background:#3A5F8F;border-radius:3px;padding:2px 7px;font-size:10px;font-weight:600;letter-spacing:.05em;}
+.eprv .etop .right{margin-left:auto;color:#C4D2E6;font-size:11.5px;}
+.eprv .ebanner{background:var(--epanel);border-bottom:1px solid var(--eline);padding:9px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.eprv .ebanner .pn{font-size:15px;font-weight:700;color:var(--etx);}
+.eprv .ebanner .dm{color:var(--emut);font-size:11.5px;}
+.eprv .ebanner .echip{border:1px solid var(--eline);border-radius:3px;padding:3px 7px;font-size:10.5px;font-weight:600;color:var(--emut);background:#F6F8FB;}
+.eprv .ebanner .echip.al{color:var(--ealert);border-color:#E4B6B2;background:#FBEFEE;}
+.eprv .etabs{background:var(--epanel);border-bottom:1px solid var(--eline);padding:0 14px;display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.eprv .etabs::-webkit-scrollbar{display:none;}
+.eprv .stage{max-width:100%;overflow:hidden;}
+.eprv .etabs span{padding:8px 12px;font-size:12px;font-weight:600;color:var(--emut);border-bottom:2.5px solid transparent;white-space:nowrap;}
+.eprv .etabs span.on{color:var(--eblue);border-color:var(--eblue);}
+.eprv .egrid{padding:14px;display:grid;gap:12px;grid-template-columns:repeat(12,1fr);}
+.eprv .ep{background:var(--epanel);border:1px solid var(--eline);border-radius:5px;grid-column:span 6;}
+.eprv .ep.w6{grid-column:span 6;}.eprv .ep.w12{grid-column:span 12;}
+@media(max-width:820px){.eprv .ep,.eprv .ep.w6{grid-column:span 12;}}
+.eprv .eh{display:flex;align-items:center;gap:7px;padding:8px 11px;border-bottom:1px solid var(--eline);font-size:10.5px;font-weight:700;letter-spacing:.03em;color:var(--emut);text-transform:uppercase;}
+.eprv .eh .ms{font-size:15px;color:#8DA0B8;}
+.eprv .eb{padding:10px 11px;color:var(--etx);}
+.eprv .ekv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:12px;border-bottom:1px solid #EDF1F6;}
+.eprv .ekv:last-child{border:none;}.eprv .ekv b{font-weight:600;}
+.eprv .news{display:flex;align-items:flex-end;gap:12px;}
+.eprv .news .n{font-size:30px;font-weight:700;color:#1F7A33;line-height:1;}
+.eprv .news svg{max-width:100%;height:auto;}
+.eprv .egrid{max-width:100%;}
+.eprv .eb{overflow-wrap:anywhere;}
+.eprv .enote{padding:8px 10px;border:1px solid #E6EBF2;border-radius:5px;margin-bottom:7px;background:#FBFCFE;}
+.eprv .enote .nh{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:10.5px;color:var(--emut);font-weight:600;margin-bottom:3px;}
+.eprv .enote .nb{font-size:12px;color:var(--etx);}
+.eprv .provo{display:inline-flex;align-items:center;gap:5px;background:#F4E9E1;border:1px solid #E3C9B6;color:#8A4A1E;border-radius:3px;padding:1px 6px;font-size:9.5px;font-weight:700;}
+.eprv .provo .k{width:8px;height:8px;border-radius:50%;border:3px solid #D2292B;display:inline-block;}
+.eprv .flash{animation:eflash 1.7s ease;}
+@keyframes eflash{0%{box-shadow:0 0 0 0 rgba(210,41,43,0);}25%{box-shadow:0 0 0 4px rgba(210,41,43,.5);}100%{box-shadow:0 0 0 0 rgba(210,41,43,0);}}
+/* thread chip inside EPR banner */
+.eprv .tchip{font-family:'Instrument Sans';display:inline-flex;align-items:center;gap:8px;background:var(--bg);color:var(--tx);border-radius:99px;padding:6px 12px 6px 8px;font-weight:700;font-size:12px;box-shadow:5px 5px 11px var(--shdark),-4px -4px 9px var(--shlight);margin-left:auto;}
+.eprv .tchip .k{width:11px;height:11px;border-radius:50%;border:4px solid #D2292B;}
+.eprv .tchip .c{background:var(--tx);color:var(--bg);border-radius:7px;padding:1px 7px;font-size:11px;}
+/* embedded drawer (relative, not fixed) */
+.eprv .stage{display:grid;grid-template-columns:1fr 356px;gap:0;align-items:stretch;}
+@media(max-width:900px){.eprv .stage{grid-template-columns:1fr;}.eprv .edrawer{display:none;}.eprv.showdrawer .edrawer{display:flex;}.eprv.showdrawer .eprcol{display:none;}}
+.eprv .edrawer{background:var(--bg);border-left:1px solid var(--line);border-radius:0 16px 16px 0;display:flex;flex-direction:column;font-family:'Instrument Sans';}
+.eprv .dh{display:flex;align-items:center;gap:9px;padding:13px 14px 9px;}
+.eprv .dh .logo svg{height:19px;width:auto;display:block;}
+.eprv .dh .hg{margin-left:auto;display:flex;gap:7px;}
+.eprv .dh .nb{display:inline-flex;align-items:center;gap:5px;background:var(--cobalt);color:#fff;border-radius:9px;padding:6px 11px;font-weight:700;font-size:11px;min-height:32px;}
+.eprv .dh .cl{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;box-shadow:inset 3px 3px 6px var(--shdark),inset -3px -3px 6px var(--shlight);}
+.eprv .dsub{padding:0 14px 11px;font-size:11px;font-weight:600;color:var(--mut);}
+.eprv .dsub b{color:var(--tx);}
+.eprv .dbody{flex:1;overflow:auto;padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;max-height:560px;}
+.eprv .dfoot{padding:10px 14px;font-size:9.5px;font-weight:600;color:var(--mut);line-height:1.6;border-top:1px solid var(--line);}
+.eprv .ecard{border-radius:15px;padding:13px 14px;color:#fff;display:flex;flex-direction:column;gap:7px;position:relative;}
+.eprv .ecard.concern{background:var(--redg);}.eprv .ecard.context{background:var(--apricot);color:var(--ink);}
+.eprv .ecard.pattern{background:#2333B8;}.eprv .ecard.comparison{background:var(--cobalt);}.eprv .ecard.priority{background:var(--amber);color:var(--ink);}
+.eprv .ecard .th{display:flex;align-items:center;gap:6px;padding-right:34px;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.95;}
+.eprv .ecard .tm{font-size:14px;font-weight:700;letter-spacing:-0.01em;line-height:1.4;}
+.eprv .ecard .mt{font-size:10px;font-weight:600;opacity:.92;line-height:1.6;}
+.eprv .kbb{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:rgba(0,0,0,.16);z-index:3;}
+.eprv .ecard.context .kbb,.eprv .ecard.priority .kbb{background:rgba(255,255,255,.4);}
+.eprv .kbb .ms{font-size:16px;}
+.eprv .cm{position:absolute;top:38px;right:8px;z-index:6;background:#17130E;color:#F0EAE0;border-radius:11px;padding:5px;min-width:210px;box-shadow:0 16px 32px rgba(0,0,0,.42);display:flex;flex-direction:column;}
+.eprv .cm button{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;border-radius:7px;font-size:11px;font-weight:600;font-family:'Instrument Sans';color:#F0EAE0;background:none;border:none;}
+.eprv .cm button:hover{background:rgba(255,255,255,.09);}
+.eprv .cm .ms{font-size:15px;opacity:.85;}
+.eprv .ghost{background:transparent;color:var(--tx);box-shadow:inset 4px 4px 9px var(--shdark),inset -4px -4px 9px var(--shlight);}
+.eprv .ghost .th{color:var(--mut);}.eprv .ghost .tm{color:var(--mut);font-size:12.5px;}
+.eprv .ecompose{border-radius:15px;padding:13px;box-shadow:9px 9px 18px var(--shdark),-9px -9px 18px var(--shlight);display:flex;flex-direction:column;gap:9px;}
+.eprv .ecompose textarea{font:inherit;font-family:'Instrument Sans';font-weight:600;font-size:13.5px;line-height:1.45;border:1.5px solid var(--line);border-radius:11px;padding:10px 11px;background:var(--card2);color:var(--tx);min-height:70px;resize:vertical;}
+.eprv .ecompose textarea:focus{outline:none;border-color:var(--cobalt);}
+.eprv .ebar{height:6px;border-radius:99px;background:var(--card2);overflow:hidden;}
+.eprv .ebar>div{height:100%;width:0;background:var(--cobalt);transition:width .1s;}
+.eprv .ecats{display:flex;gap:6px;flex-wrap:wrap;}
+.eprv .ecats button{border-radius:9px;padding:6px 9px;font-size:10px;font-weight:700;letter-spacing:.04em;display:inline-flex;gap:5px;align-items:center;box-shadow:inset 3px 3px 6px var(--shdark),inset -3px -3px 6px var(--shlight);min-height:34px;color:var(--tx);background:var(--bg);}
+.eprv .ecats button[aria-pressed="true"]{box-shadow:none;outline:2px solid var(--tx);}
+.eprv .cd{width:10px;height:10px;border-radius:4px;display:inline-block;}
+.eprv .ebtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:11px;font-weight:700;font-size:12px;padding:9px 13px;min-height:40px;background:var(--cobalt);color:#fff;border:none;font-family:'Instrument Sans';}
+.eprv .ebtn.big{width:100%;}.eprv .ebtn:disabled{background:var(--card2);color:var(--mut);cursor:not-allowed;}
+.eprv .flowrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+.eprv .flowstep{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;}
+.eprv .flowstep .sn{width:22px;height:22px;border-radius:7px;background:var(--cobalt);color:#fff;font-weight:700;font-size:12px;display:grid;place-items:center;margin-bottom:7px;}
+.eprv .flowstep h4{font-size:12.5px;font-weight:700;margin-bottom:3px;}
+.eprv .flowstep p{font-size:11.5px;color:var(--mut);font-weight:500;line-height:1.5;}
+.eprv .mobcue{display:none;}
+@media(max-width:900px){.eprv .mobcue{display:flex;}}
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="appbar">
+    <a class="backlink" href="https://thread-demo.github.io/demo/" aria-label="Back to Thread demo home"><span class="ms">arrow_back</span></a>
+    <span class="logo" aria-label="Thread"><svg height="30" style="width:auto;display:block;" viewBox="0 0 870 237" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_242_33)">
+<path d="M223.686 34.3644L223.651 115.149L143.586 115.111C143.822 100.592 137.912 86.8279 128.077 75.6196C129.769 74.8132 131.504 74.5454 133.463 74.3503L172.334 74.3241V53.3282L133.137 53.3748C125.376 53.8319 118.336 56.4345 111.789 60.4375V0.0349392L185.778 4.23073e-06C192.96 -0.00290702 199.572 1.49638 205.639 5.30721C215.988 11.4936 222.815 22.4719 223.686 34.3644Z" fill="#D2292B"/>
+<path d="M111.789 0.0349121V60.4345L106.598 57.7329C101.405 55.0313 95.9722 53.7008 90.0187 53.3602L51.2874 53.3282L51.2933 74.3241L88.5514 74.3357C90.8687 74.3561 92.8891 74.6356 95.1599 75.5293C85.3665 86.6474 79.3868 100.426 79.5935 115.09L0.00292969 115.154L0.0262197 35.6103C0.0320422 17.648 16.827 0.180474 35.328 0.151362L111.789 0.0349121Z" fill="#233C75"/>
+<path d="M223.654 115.149L223.674 187.813C223.627 206.515 208.032 222.789 189.31 223.697L144.078 224L144.069 200.317C144.005 190.364 141.492 180.946 136.846 172.177C133.818 166.445 129.99 161.423 125.486 156.622C136.133 144.794 143.329 131.07 143.588 115.111L223.654 115.149Z" fill="#233C75"/>
+<path d="M79.5906 115.093C79.9923 131.018 86.9589 144.803 97.6694 156.576C91.3607 163.187 86.5077 170.573 83.2325 178.966C80.429 186.067 79.0898 193.281 79.084 200.92L79.0723 223.986L34.1722 223.674C15.6741 222.754 0.133917 206.637 0.107716 188.107L0 115.157L79.5906 115.093Z" fill="#F4AF31"/>
+<path d="M111.996 171.519L111.74 223.892L99 223.901L99.0204 199.473C99.0262 191.318 101.789 183.738 106.456 177.187L111.213 171.423C111.317 171.295 111.6 171.208 111.673 171.266C111.745 171.324 111.716 171.539 111.993 171.519H111.996Z" fill="#F4AF31"/>
+<path d="M111.739 223.892L111.995 171.519C118.648 178.314 124.033 188.692 124.071 198.32L124.173 223.916L111.739 223.892Z" fill="#233C75"/>
+<path d="M111.911 115.157L111.868 141.845C111.696 142.031 111.702 142.08 111.501 142.008C111.355 141.955 111.291 141.813 111.149 141.658C106.965 137.114 103.46 132.048 101.332 126.226C100.001 122.59 99.2999 118.997 99.1572 115.483" fill="#233C75"/>
+<path d="M99.1568 115.483C98.7318 104.942 103.358 95.1163 111.236 87.0405C111.378 86.892 111.565 86.8251 111.675 86.8513C111.765 86.8746 111.859 87.0318 111.96 87.1366L111.914 115.16" fill="#233C75"/>
+<path d="M111.911 115.713L111.961 87.1365C122.578 97.9256 127.248 112.307 121.562 126.802C119.335 132.479 115.984 137.379 111.868 141.845L111.911 115.713Z" fill="#D32C2D"/>
+</g>
+<path d="M364.5 77.25L366.15 78.9V98.1L364.5 99.75H337.65V178.35L336 180H315.75L314.1 178.35V99.75H287.4L285.75 98.1V78.9L287.4 77.25H364.5ZM460.491 77.25L461.991 78.9V178.35L460.491 180H440.091L438.441 178.35V138.45H404.691V178.35L403.041 180H382.791L381.141 178.35V78.9L382.791 77.25H403.041L404.691 78.9V115.95H438.441V78.9L440.091 77.25H460.491ZM486.209 77.25H526.259C538.659 77.25 548.159 80.5 554.759 87C561.459 93.4 564.809 101.5 564.809 111.3C564.809 123.4 560.059 132.6 550.559 138.9L566.009 178.35L564.809 180H543.059L540.809 178.5L528.359 145.2H508.109V178.35L506.459 180H486.209L484.559 178.35V78.9L486.209 77.25ZM537.659 120.3C540.059 117.8 541.259 114.8 541.259 111.3C541.259 107.8 540.059 104.85 537.659 102.45C535.259 100.05 531.959 98.85 527.759 98.85H508.109V123.9H527.759C531.959 123.9 535.259 122.7 537.659 120.3ZM662.293 157.5L663.943 159.15V178.35L662.293 180H586.843L585.193 178.35V78.9L586.843 77.25H661.993L663.643 78.9V98.1L661.993 99.75H608.743V115.2H646.393L648.043 116.85V135.15L646.393 136.8H608.743V157.5H662.293ZM737.317 78.9L767.017 178.35L765.367 180H744.067L742.417 178.35L737.017 159H704.617L699.217 178.35L697.567 180H676.867L675.217 178.35L704.917 78.9L706.567 77.25H735.667L737.317 78.9ZM721.117 100.5L710.617 137.85H731.317L721.117 100.5ZM782.107 77.25H820.507C832.607 77.25 842.357 80.1 849.757 85.8C857.157 91.4 860.857 99.8 860.857 111V146.25C860.857 157.45 857.157 165.9 849.757 171.6C842.357 177.2 832.607 180 820.507 180H782.107L780.457 178.35V78.9L782.107 77.25ZM837.307 143.7V113.55C837.307 108.85 835.757 105.2 832.657 102.6C829.657 99.9 825.607 98.55 820.507 98.55H804.007V158.7H820.507C825.607 158.7 829.657 157.4 832.657 154.8C835.757 152.1 837.307 148.4 837.307 143.7Z" fill="black"/>
+<defs>
+<clipPath id="clip0_242_33">
+<rect width="223.686" height="224" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+</span>
+    <span class="wardtag">WARD 7B</span>
+    <span class="topright">
+      <span class="userchip" id="userchip" style="display:none;"><span class="nav-av" id="userav">P</span><span id="username"></span></span>
+      <button class="iconbtn" id="gear" style="display:none;" aria-haspopup="menu" aria-expanded="false" aria-label="Settings" onclick="toggleMenu()"><span class="ms">settings</span></button>
+      <div class="menu" id="menu" role="menu" aria-label="Settings">
+        <div class="mlabel">Appearance</div>
+        <div class="mrow"><span class="ms">contrast</span>Theme
+          <span class="seg" role="group" aria-label="Theme">
+            <button id="th-dark" aria-pressed="false" onclick="setTheme('dark')">Dark</button>
+            <button id="th-light" aria-pressed="true" onclick="setTheme('light')">Light</button>
+          </span>
+        </div>
+        <div class="mrow"><span class="ms">grid_view</span>Layout
+          <span class="seg" role="group" aria-label="Layout">
+            <button id="vw-grid" aria-pressed="true" onclick="setView('grid')">Grid</button>
+            <button id="vw-list" aria-pressed="false" onclick="setView('list')">List</button>
+          </span>
+        </div>
+        <div class="mlabel">Ward</div>
+        <button class="mrow" role="menuitem" onclick="closeMenu();go('charge')"><span class="ms">visibility</span>Charge view · ward heat</button>
+        <button class="mrow" role="menuitem" onclick="closeMenu();go('epr')"><span class="ms">dataset_linked</span>How Thread meets the EPR</button>
+        <div class="mlabel">Prototype</div>
+        <button class="mrow" role="menuitem" onclick="closeMenu();openDemo()"><span class="ms">tune</span>Demo controls &amp; scenarios</button>
+        <button class="mrow" role="menuitem" onclick="closeMenu();openAbout()"><span class="ms">info</span>About this prototype</button>
+      </div>
+    </span>
+  </header>
+  <div class="ambient" id="ambient" style="display:none;" aria-live="polite">
+    <div class="aline" id="aline"></div>
+    <div class="asub" id="asub"></div>
+  </div>
+  <div id="downtimeBanner" class="banner alert" style="display:none;" role="alert">
+    <span class="ms" aria-hidden="true">cloud_off</span>
+    Thread is unavailable. Handover proceeds verbally, as it always has.
+    <button class="btn ghost" onclick="toggleDowntime()">Restore</button>
+  </div>
+  <main id="screens"></main>
+</div>
+
+<button class="btn" id="newfab" onclick="newFromFab()"><span class="ms">add</span>New Thread</button>
+<div class="fab" id="fab" style="display:none;" role="navigation" aria-label="Primary">
+  <button class="fbtn" id="fab-patients" onclick="go('ward')"><span class="ms">bed</span>Patients</button>
+  <span class="fdivider"></span>
+  <button class="fbtn end" id="fab-end" onclick="endShiftTap()"><span class="ms">sports_score</span><span id="fab-end-txt">End shift</span></button>
+  <button class="fbtn homorph" id="fab-ho" style="display:none;" onclick="startHo()"><span class="ms">sync_alt</span>Begin handover</button>
+</div>
+
+<div class="script" id="script" style="display:none;" aria-live="polite">
+  <div class="stag"><span id="scriptStep">DEMO SCRIPT · 1/5</span><button onclick="hideScript()" aria-label="Hide demo script">×</button></div>
+  <h2 id="scriptTitle"></h2>
+  <p id="scriptText"></p>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal" id="modalBox"></div></div>
+<script>
+/* ================= DATA ================= */
+const CATS={
+  comparison:{label:'Comparison',hint:'Change from their own baseline',ico:'compare_arrows',c:'#2E56E8'},
+  context:{label:'Context',hint:'Social or environmental factors',ico:'diversity_1',c:'#E0956A'},
+  pattern:{label:'Pattern',hint:'Recurring observation over time',ico:'timeline',c:'#2333B8'},
+  concern:{label:'Concern',hint:'Intuition, not yet in the numbers',ico:'emergency_home',c:'#B23A24'},
+  priority:{label:'Priority',hint:'What the next shift must hold',ico:'flag',c:'#D9A430'},
+};
+const CAT_ORDER=['concern','priority','pattern','comparison','context'];
+const PCOLORS={george:{c:'#E4B95B',name:'Ochre'},derek:{c:'#A9C89A',name:'Sage'},eileen:{c:'#E39A6B',name:'Apricot'},alisha:{c:'#B7A8E8',name:'Lilac'},margaret:{c:'#E5A9BC',name:'Rose'}};
+const S={
+  screen:'signin',user:null,phase:'day',clock:'18:40',step:1,
+  hoIndex:0,hoT:0,hoStarted:false,
+  obsEventDone:false,obsEscalated:false,tomThreadDone:false,
+  downtime:false,patientOpen:null,endQueueDone:false,
+  eileenFlag:false,visitedAlisha:false,lintDismissed:false,editTarget:null,
+  view:'grid',theme:'light',scriptHidden:false,fabHo:false,
+  patients:[
+    {id:'george',bed:1,name:'George Okafor',age:74,dx:'Community-acquired pneumonia · day 3',news:1,newsHist:[2,2,1,1,2,1,1,1,1,1,1,1],obsHrs:[0,4,8,11],
+      vit:{rr:{v:18,u:'/min',hist:[19,18,18,19,18,18,17,18,18,18,18,18]},hr:{v:84,u:'bpm',hist:[92,90,88,86,88,86,85,84,84,85,84,84]},temp:{v:37.2,u:'°C'},spo2:{v:95,u:'%'}},
+      ai:['IV co-amoxiclav 8-hourly, afternoon dose given','Obs stable through shift, sats 95% on air','Chest physio reviewed at 16:00']},
+    {id:'derek',bed:2,name:'Derek Marsh',age:81,dx:'Hip fracture repair · day 4',news:0,discharge:true,newsHist:[1,0,0,0,0,0,0,0,0,0,0,0],obsHrs:[0,6,11],
+      vit:{rr:{v:14,u:'/min',hist:[15,14,14,14,15,14,14,14,14,14,14,14]},hr:{v:72,u:'bpm',hist:[76,74,74,72,73,72,72,71,72,72,72,72]},temp:{v:36.6,u:'°C'},spo2:{v:97,u:'%'}},
+      ai:['Mobilising with frame, physio goals met','Discharge planned tomorrow, pending cardiology','No analgesia requested since morning']},
+    {id:'eileen',bed:3,name:'Eileen Foster',age:88,dx:'Pneumonia + AKI · day 2',news:2,newsHist:[4,3,3,3,2,2,3,2,2,2,2,2],obsHrs:[0,2,4,6,8,10,11],fluid:{inn:1450,out:600},
+      vit:{rr:{v:20,u:'/min',hist:[22,21,21,20,21,20,20,20,21,20,20,20]},hr:{v:92,u:'bpm',hist:[98,96,95,94,95,93,92,93,92,92,92,92]},temp:{v:37.6,u:'°C'},spo2:{v:94,u:'%'}},
+      ai:['IV fluids running, strict fluid balance chart','Creatinine improving on morning bloods','Obs stable through the afternoon']},
+    {id:'alisha',bed:4,name:'Alisha Mensah',age:29,dx:'Admitted overnight · abdominal pain, under investigation',news:0,newsHist:[1,0,0,0,0,0,0,0,0,0,0,0],obsHrs:[0,4,8,11],
+      vit:{rr:{v:14,u:'/min',hist:[15,14,14,14,14,14,13,14,14,14,14,14]},hr:{v:78,u:'bpm',hist:[84,82,80,80,79,78,78,78,78,78,78,78]},temp:{v:36.9,u:'°C'},spo2:{v:98,u:'%'}},
+      ai:['CT abdomen awaited, surgical review 15:20','Analgesia effective per pain scores','Obs within normal range all shift']},
+    {id:'margaret',bed:6,name:'Margaret Hale',age:92,dx:'Frailty · delirium screen positive',news:1,newsHist:[1,1,2,1,1,2,1,1,1,1,1,1],obsHrs:[0,3,6,9,11],
+      vit:{rr:{v:17,u:'/min',hist:[18,17,17,18,17,17,17,17,17,17,17,17]},hr:{v:88,u:'bpm',hist:[90,92,88,90,89,88,88,89,88,88,88,88]},temp:{v:36.8,u:'°C'},spo2:{v:96,u:'%'}},
+      ai:['4AT positive, delirium pathway started','Family meeting held at 14:00','Obs stable, eating poorly (see Threads)']},
+  ],
+  threads:[
+    {id:'t-derek1',p:'derek',cat:'priority',msg:'Still waiting on cardiology review. Discharge hangs on it.',author:'Sofia L, RN',time:'07:55',status:'live',renewals:3,ack:null,esc:null},
+    {id:'t-eileen1',p:'eileen',cat:'concern',msg:"Something doesn't feel quite right this afternoon. Can't pin it to the obs.",author:'Priya K, RN',time:'14:05',status:'live',renewals:0,ack:null,esc:null},
+    {id:'t-marg1',p:'margaret',cat:'comparison',msg:'More muddled than her own baseline this morning.',author:'Priya K, RN',time:'08:40',status:'live',renewals:0,ack:null,esc:null},
+    {id:'t-marg2',p:'margaret',cat:'context',msg:'Daughter anxious after the family meeting. Wants updates each visit.',author:'Priya K, RN',time:'14:30',status:'live',renewals:0,ack:null,esc:null},
+    {id:'t-marg3',p:'margaret',cat:'pattern',msg:'Settles when the bay lights are dimmed after lunch.',author:'Sofia L, RN',time:'13:10',status:'live',renewals:1,ack:null,esc:null,img:'https://picsum.photos/seed/dimward/640/360'},
+    {id:'t-marg4',p:'margaret',cat:'priority',msg:'Chase delirium screen bloods, sent at 12:00.',author:'Priya K, RN',time:'12:05',status:'live',renewals:0,ack:null,esc:null},
+    {id:'t-marg5',p:'margaret',cat:'concern',msg:'Barely eaten today. Watch intake overnight.',author:'Priya K, RN',time:'17:20',status:'live',renewals:0,ack:null,esc:null,img:'https://picsum.photos/seed/mealtray/640/360'},
+  ],
+};
+let idc=0;
+const uid=()=>'t-new'+(++idc);
+const threadsFor=p=>S.threads.filter(t=>t.p===p&&['live','relayed','acknowledged'].includes(t.status));
+const el=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const ico=n=>'<span class="ms" aria-hidden="true">'+n+'</span>';
+const pcol=id=>PCOLORS[id].c;
+const initials=n=>n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+/* ================= VIS HELPERS ================= */
+function sparkBars(vals,color,max,w,h){
+  max=max||Math.max(...vals,1);w=w||80;h=h||24;const bw=w/vals.length;
+  return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="12 hour trend">'+
+    vals.map((v,i)=>{const bh=Math.max(2.5,(v/max)*h);
+      return '<rect x="'+(i*bw+1).toFixed(1)+'" y="'+(h-bh).toFixed(1)+'" width="'+(bw-2).toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="1.5" fill="'+color+'" opacity="'+(i===vals.length-1?'1':'0.45')+'"/>';}).join('')+'</svg>';
+}
+function sparkLine(vals,color,max,w,h){
+  max=max||Math.max(...vals,1);w=w||96;h=h||24;
+  const pts=vals.map((v,i)=>((i/(vals.length-1))*(w-6)+3).toFixed(1)+','+(h-3-(v/max)*(h-8)).toFixed(1)).join(' ');
+  const last=pts.split(' ').pop();
+  return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="trend"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="'+last.split(',')[0]+'" cy="'+last.split(',')[1]+'" r="3" fill="'+color+'"/></svg>';
+}
+function arcPath(cx,cy,r,a0,a1){
+  const p=a=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+  const[x0,y0]=p(a0),[x1,y1]=p(a1);
+  return 'M '+x0.toFixed(2)+' '+y0.toFixed(2)+' A '+r+' '+r+' 0 '+((a1-a0)>Math.PI?1:0)+' 1 '+x1.toFixed(2)+' '+y1.toFixed(2);
+}
+function threadRing(ts,size,thick,center){
+  const cx=size/2,cy=size/2,r=(size-thick)/2;let segs='';
+  if(!ts.length){segs='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(28,23,18,.18)" stroke-width="'+thick+'"/>';}
+  else{const n=ts.length,gap=n===1?0.001:0.42,span=(Math.PI*2-gap*n)/n;let a=-Math.PI/2;
+    ts.forEach(t=>{segs+='<path d="'+arcPath(cx,cy,r,a,a+span)+'" fill="none" stroke="'+CATS[t.cat].c+'" stroke-width="'+thick+'" stroke-linecap="round"/>';a+=span+gap;});}
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" role="img" aria-label="'+ts.length+' active threads">'+segs+
+    '<text x="'+cx+'" y="'+(cy+1)+'" text-anchor="middle" dominant-baseline="middle" font-family="Instrument Sans" font-weight="700" font-size="'+(size*0.3)+'" fill="'+(center||'#1C1712')+'">'+ts.length+'</text></svg>';
+}
+function timeToSlot(t){const[h,m]=t.split(':').map(Number);let mins=(h*60+m)-450;if(mins<0)mins+=1440;return Math.max(0,Math.min(23,Math.floor(mins/30)));}
+function slotTime(i){const m=450+i*30;const h=Math.floor(m/60)%24;const mm=m%60;return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0');}
+function pulseStrip(p){
+  const slots=new Array(24).fill(null);
+  (p.obsHrs||[]).forEach(h=>{slots[Math.min(23,h*2)]={c:'#5C7CF0',t:'Obs taken'};});
+  S.threads.filter(t=>t.p===p.id).forEach(t=>{slots[timeToSlot(t.time)]={c:CATS[t.cat].c,t:'Thread created · '+CATS[t.cat].label,tm:t.time};});
+  return '<div class="pulse" role="group" aria-label="Shift pulse: observations and thread events across 12 hours">'+
+    slots.map((sl,i)=>{
+      if(!sl) return '<i></i>';
+      const tip=(sl.tm||slotTime(i))+' · '+sl.t;
+      return '<button type="button" style="background-color:'+sl.c+';" data-tip="'+tip+'" aria-label="'+tip+'" onclick="event.stopPropagation()"></button>';
+    }).join('')+'</div>';
+}
+const NEWS_SCALE=['#5A6E8C','#8FAE7E','#D9A430','#C05A24','#B23A24','#8E2415'];
+const newsHeat=v=>NEWS_SCALE[Math.min(v,5)];
+
+/* ================= SCRIPT OVERLAY (demo scenarios) ================= */
+const GUIDE={
+  1:{step:'1/5',title:'You are Priya, day nurse. Alisha (Bed 4) has been quieter than yesterday.',text:'Obs are normal: nothing to chart, something to carry. Open the Alisha card and create a Thread.'},
+  2:{step:'2/5',title:'It is 19:25. The night shift is here.',text:'Tap End shift in the floating bar, then Begin handover. You will relay each Thread to Tom, one at a time.'},
+  3:{step:'3/5',title:'You are now Tom, night nurse.',text:'The board is sorted for your first round: concerns first. Open Alisha (Bed 4) and watch for the 03:15 obs update.'},
+  4:{step:'4/5',title:'Add your own read, then close the loop.',text:'Create a Thread (try Margaret, Bed 6). Then tap End shift and decide the fate of every Thread.'},
+  5:{step:'5/5',title:'The relay is complete.',text:'One read crossed two shifts and entered the record only when it earned it. Replay from Settings → Demo controls.'},
+};
+function setStep(n){
+  S.step=n;const g=GUIDE[n];
+  if(!S.scriptHidden)el('script').style.display='block';
+  el('scriptStep').textContent='DEMO SCRIPT · '+g.step;
+  el('scriptTitle').textContent=g.title;el('scriptText').textContent=g.text;
+}
+function hideScript(){S.scriptHidden=true;el('script').style.display='none';toast('Demo script hidden. Reopen from Settings → Demo controls.');}
+function showScript(){S.scriptHidden=false;setStep(S.step);}
+
+/* ================= CHROME HELPERS ================= */
+function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),3600);}
+function setUser(u){
+  S.user=u;el('userchip').style.display='flex';el('gear').style.display='grid';
+  const av=el('userav');
+  if(u==='priya'){av.className='nav-av priya';av.textContent='PK';el('username').textContent='Priya K, RN · Day';}
+  if(u==='tom'){av.className='nav-av tom';av.textContent='TR';el('username').textContent='Tom R, RN · Night';}
+}
+function setTheme(t){
+  S.theme=t;document.documentElement.setAttribute('data-theme',t);
+  el('th-dark').setAttribute('aria-pressed',t==='dark');el('th-light').setAttribute('aria-pressed',t==='light');
+}
+function setView(v){
+  S.view=v;
+  el('vw-grid').setAttribute('aria-pressed',v==='grid');el('vw-list').setAttribute('aria-pressed',v==='list');
+  render();
+}
+function toggleMenu(){const m=el('menu');const open=!m.classList.contains('open');m.classList.toggle('open',open);el('gear').setAttribute('aria-expanded',open);}
+function closeMenu(){el('menu').classList.remove('open');el('gear').setAttribute('aria-expanded','false');}
+document.addEventListener('click',e=>{if(!e.target.closest('.topright'))closeMenu();});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tip]');
+  document.querySelectorAll('[data-tip].tipon').forEach(x=>{if(x!==t)x.classList.remove('tipon');});
+  if(t)t.classList.toggle('tipon');
+});
+
+function setAmbient(){
+  const a=el('ambient');
+  if(S.screen==='signin'){a.style.display='none';return;}
+  a.style.display='block';
+  const live=S.threads.filter(t=>['live','relayed','acknowledged'].includes(t.status)).length;
+  const rem=S.threads.filter(t=>t.remind&&['acknowledged','live'].includes(t.status)).length;
+  let line='',sub='';
+  if(S.screen==='handover'){
+    const p=S.patients[S.hoIndex];
+    line='Handover · '+esc(p.name)+' · Bed '+p.bed+' · NEWS '+p.news;
+    sub='Speak to each read. Tom acknowledges the card in focus.';
+    a.classList.add('mini');
+  }else{
+    a.classList.remove('mini');
+    const shift=S.phase==='day'?'Day shift':(S.phase==='night'?'Night shift':'Shift complete');
+    line='<b>'+S.clock+'</b> · '+shift+'. <span class="warm">'+live+' live thread'+(live===1?'':'s')+'</span> across 5 patients.'+(S.phase==='day'?' Handover at <b>19:30</b>.':(S.phase==='night'?' Next handover <b>07:30</b>.':''));
+    sub=S.phase==='night'
+      ?('First round is sorted concerns-first.'+(rem?' '+rem+' reminder'+(rem===1?'':'s')+' set for tonight.':'')+(S.eileenFlag?' One unacknowledged Thread is flagged to the nurse in charge.':''))
+      :'The color is the patient; it follows the bed. Ring segments are Threads.';
+  }
+  el('aline').innerHTML=line;el('asub').textContent=sub;
+}
+addEventListener('scroll',()=>{
+  if(S.screen==='handover')return;
+  el('ambient').classList.toggle('mini',scrollY>36);
+},{passive:true});
+
+function newFromFab(){
+  const p=S.patients.find(x=>x.id===S.patientOpen);
+  if(threadsFor(p.id).length>=5){reviewOldest(p.id);return;}
+  go('create');
+}
+function setFab(){
+  el('newfab').style.display = (S.screen==='patient') ? 'inline-flex' : 'none';
+  const f=el('fab');
+  if(S.screen==='signin'||S.screen.startsWith('handover')){f.style.display='none';return;}
+  f.style.display='flex';
+  el('fab-patients').setAttribute('aria-current',['ward','patient','create','charge','epr'].includes(S.screen)?'true':'false');
+  const endBtn=el('fab-end'),hoBtn=el('fab-ho');
+  if(S.phase==='done'){endBtn.style.display='none';hoBtn.style.display='none';return;}
+  endBtn.style.display='inline-flex';
+  el('fab-end-txt').textContent=S.phase==='day'?'End shift':'End shift · 07:00';
+  hoBtn.style.display=(S.phase==='day'&&S.fabHo)?'inline-flex':'none';
+}
+function endShiftTap(){
+  if(S.phase==='day'){
+    S.fabHo=!S.fabHo;setFab();
+    if(S.fabHo)toast('Day ends with handover. Begin when the night nurse is with you.');
+  }else if(S.phase==='night'){
+    go('endshift');
+  }
+}
+
+/* ================= ROUTER ================= */
+function go(screen,opts){
+  if(S.downtime&&['patient','create','handover'].includes(screen)){toast('Thread is in downtime. Restore it from the banner first.');return;}
+  S.screen=screen;if(opts&&opts.p)S.patientOpen=opts.p;
+  render();window.scrollTo({top:0});
+}
+function render(){
+  const map={signin:rSignin,ward:rWard,patient:rPatient,create:rCreate,handover:rHo,charge:rCharge,endshift:rEnd,summary:rSummary,epr:rEpr};
+  el('screens').innerHTML='<div class="screen active">'+map[S.screen]()+'</div>';
+  setAmbient();setFab();
+  if(S.screen==='create')wireCompose();
+  if(S.screen==='epr')eprRender();
+}
+
+/* ================= SIGN IN ================= */
+function rSignin(){
+  return `
+  <div class="hero" style="margin-top:18px;">
+    <div>
+      <h1>The handover, with the understanding attached.</h1>
+      <p>Thread carries a nurse's read of a patient across the shift change: short, attributed, gone when its work is done. Every patient owns a color; the color follows the bed.</p>
+    </div>
+    <img src="https://picsum.photos/seed/ward7b/800/500" alt="Hospital ward corridor, stock placeholder" onerror="this.style.display='none'">
+  </div>
+  <p class="pagesub">Choose where to begin. The guided demo starts with Priya.</p>
+  <div class="rolegrid">
+    <button class="rolecard" style="background:#9FB4FF;" onclick="startAs('priya')">
+      <span class="avatar" style="background:var(--ink);color:#9FB4FF;">PK</span>
+      <span><h3>Priya K, RN</h3><p>Day shift · 07:30 to 19:30 · guided demo starts here</p></span>${ico('arrow_forward')}
+    </button>
+    <button class="rolecard" style="background:#8FE0C0;" onclick="startAs('tom')">
+      <span class="avatar" style="background:var(--ink);color:#8FE0C0;">TR</span>
+      <span><h3>Tom R, RN</h3><p>Night shift · 19:30 to 07:30 · jumps past handover</p></span>${ico('arrow_forward')}
+    </button>
+  </div>`;
+}
+function startAs(u){
+  if(u==='priya'){setTheme('light');setUser('priya');S.phase='day';S.clock='18:40';setStep(1);go('ward');}
+  else{jumpTo(3);}
+}
+
+/* ================= WARD ================= */
+function acuity(p){
+  const ts=threadsFor(p.id);
+  return (ts.some(t=>t.cat==='concern')?10:0)+p.news*3+ts.length;
+}
+function rWard(){
+  const isNight=S.phase==='night';
+  const list=[...S.patients].sort((a,b)=>acuity(b)-acuity(a));
+  const banners=[];
+  if(isNight&&S.eileenFlag)
+    banners.push('<div class="banner warn" role="alert">'+ico('flag')+'1 Thread on Eileen Foster (Bed 3) was not acknowledged at handover. Flagged to the nurse in charge at '+S.flagTime+'.<button class="btn ghost" onclick="go(\'patient\',{p:\'eileen\'})">Review</button></div>');
+  const rem=S.threads.filter(t=>t.remind&&['acknowledged','live'].includes(t.status));
+  if(isNight&&rem.length)
+    banners.push('<div class="banner info">'+ico('alarm')+rem.map(t=>'<b>'+t.remind+'</b> · '+esc(S.patients.find(x=>x.id===t.p).name.split(' ')[0])+': '+esc(t.msg.slice(0,42))+(t.msg.length>42?'…':'')).join(' &nbsp;·&nbsp; ')+'</div>');
+  if(isNight&&!S.obsEventDone&&S.visitedAlisha)banners.push(obsEventCard());
+  if(isNight&&S.tomThreadDone&&S.obsEventDone&&!S.endQueueDone)
+    banners.push('<div class="banner info">'+ico('schedule')+'06:45 · Shift end approaching. Tap End shift in the floating bar to decide your Threads.</div>');
+  return `
+    ${banners.join('')}
+    <div class="section-label">${isNight?'First round · concerns first':'My patients · by acuity'}
+      <span class="viewtog">${viewToggle()}</span></div>
+    <div class="pgrid ${S.view}">${list.map(p=>patientCard(p)).join('')}</div>`;
+}
+function viewToggle(){
+  return `<button class="iconbtn" style="width:36px;height:36px;" aria-label="Grid view" onclick="setView('grid')" ${S.view==='grid'?'disabled title="Grid view is active"':''}><span class="ms" style="font-size:17px;">grid_view</span></button>
+  <button class="iconbtn" style="width:36px;height:36px;" aria-label="List view" onclick="setView('list')" ${S.view==='list'?'disabled title="List view is active"':''}><span class="ms" style="font-size:17px;">view_agenda</span></button>`;
+}
+function patientCard(p){
+  const ts=threadsFor(p.id);
+  const flags=[];
+  if(S.eileenFlag&&p.id==='eileen')flags.push('<span class="pflag">'+ico('flag')+'unack</span>');
+  if(p.discharge)flags.push('<span class="pflag">'+ico('logout')+'discharge</span>');
+  if(ts.some(t=>t.remind))flags.push('<span class="pflag">'+ico('alarm')+'reminder</span>');
+  return `
+  <button class="pcard" onclick="go('patient',{p:'${p.id}'})"
+    aria-label="Open ${esc(p.name)}, bed ${p.bed}, NEWS ${p.news}, ${ts.length} active threads">
+    <span class="top">
+      <span class="avatar" aria-hidden="true">${initials(p.name)}</span>
+      <span style="min-width:0;"><span class="pname">${esc(p.name)}</span><span class="pdx">${esc(p.dx)}</span></span>
+      <span class="bedanchor"><span class="b">BED</span><span class="n">${p.bed}</span></span>
+    </span>
+    <span class="mid">
+      <span class="newsmini">
+        <span><span class="nk">NEWS</span><span class="nv" style="color:${p.news>=3?'#7A1F10':(p.news>=1?'#6B4E08':'#2E4A20')};">${p.news}</span></span>
+        ${sparkBars(p.newsHist,'rgba(28,23,18,.75)',5)}
+      </span>
+      <span class="ringwrap">${threadRing(ts,54,7)}<span class="rk">THREADS</span></span>
+    </span>
+    ${flags.length?'<span class="foot">'+flags.join('')+'</span>':''}
+  </button>`;
+}
+
+/* ================= PATIENT ================= */
+function rPatient(){
+  const p=S.patients.find(x=>x.id===S.patientOpen);
+  const ts=threadsFor(p.id);const c=pcol(p.id);
+  if(S.phase==='night'&&p.id==='alisha')S.visitedAlisha=true;
+  const capped=ts.length>=5;
+  const obsCard=(S.phase==='night'&&p.id==='alisha'&&S.visitedAlisha&&!S.obsEventDone)?obsEventCard():'';
+  return `
+  <button class="btn ghost" onclick="go('ward')" style="margin-bottom:14px;">${ico('arrow_back')}Patients</button>
+  <div class="pheader">
+    <span class="avatar">${initials(p.name)}</span>
+    <span style="min-width:0;">
+      <span class="pname">${esc(p.name)} <span style="font-size:.55em;opacity:.65;">· ${p.age}</span></span>
+      <span class="pdx" style="display:block;">${esc(p.dx)}</span>
+      <span style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;">
+        ${p.discharge?'<span class="pflag">'+ico('logout')+'discharge tomorrow</span>':''}
+      </span>
+    </span>
+    <span class="right">
+      <span class="ringwrap">${threadRing(ts,64,8)}<span class="rk">THREADS</span></span>
+      <span class="bedanchor" style="padding:8px 12px 7px;"><span class="b">BED</span><span class="n" style="font-size:23px;">${p.bed}</span></span>
+    </span>
+  </div>
+  ${obsCard?'<div style="margin-top:14px;">'+obsCard+'</div>':''}
+  <div class="section-label">Active threads ${ts.length?'· '+ts.length+' of 5':''}${capped?' · at cap, New Thread reviews the oldest first':''}<span class="viewtog">${viewToggle()}</span></div>
+  <div class="tgrid ${S.view}">
+    ${ts.length?ts.map(t=>tcard(t)).join('')
+      :'<div class="tilebox" style="grid-column:1/-1;text-align:center;color:var(--mut);font-weight:600;">No active Threads on '+esc(p.name.split(' ')[0])+'. A clean slate is itself information.</div>'}
+  </div>
+  <div class="section-label">Context</div>
+  <div class="pbody" style="margin-top:0;">
+    <div class="ai" role="region" aria-label="AI generated factual summary">
+      <span class="lbl" style="color:#8FA4F5;">${ico('smart_toy')} FACTUAL LAYER · AMBIENT AI · ${S.phase==='day'?'18:35':'19:28'}</span>
+      <ul>${p.ai.map(l=>'<li>'+ico('check')+esc(l)+'</li>').join('')}</ul>
+    </div>
+    <div>
+      <div class="section-label" style="margin-top:0;">Vitals · last check ${S.phase==='day'?'18:00':'22:00'}</div>
+      <div class="vgrid vg3 ${S.view==='list'?'list':''}">${vitals(p)}</div>
+      <div class="tilebox" style="margin-top:12px;">
+        <span class="lbl">${ico('graphic_eq')} SHIFT PULSE · 07:30 → 19:30</span>
+        <div style="margin-top:12px;">${pulseStrip(p)}</div>
+        <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;">
+          <span class="lbl legend-obs">● OBS TAKEN</span>
+          <span class="lbl legend-thr">● THREAD CREATED</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function vitals(p){
+  const rrAlert=p.vit.rr.v>=21;
+  const cells=[
+    {k:'RESP',ic:'air',v:p.vit.rr.v,u:p.vit.rr.u,spark:sparkLine(p.vit.rr.hist,rrAlert?'#E0956A':'#5C7CF0',26),alert:rrAlert,tip:'Respiratory rate, breaths per minute. Line is the 12h trend. Elevated at 21 and above.'},
+    {k:'HEART',ic:'cardiology',v:p.vit.hr.v,u:p.vit.hr.u,spark:sparkLine(p.vit.hr.hist,'#5C7CF0',120),tip:'Heart rate in beats per minute. Line is the 12h trend.'},
+    {k:'TEMP',ic:'device_thermostat',v:p.vit.temp.v,u:p.vit.temp.u,tip:'Core temperature in degrees Celsius, last check.'},
+    {k:'SPO2',ic:'spo2',v:p.vit.spo2.v,u:p.vit.spo2.u,tip:'Oxygen saturation on room air, last check.'},
+    {k:'NEWS',ic:'monitoring',v:p.news,u:'',spark:sparkBars(p.newsHist,newsHeat(p.news),5,96,24),tip:'National Early Warning Score. 0 is low risk, 5 and above is critical. Bars show 12h.'},
+  ];
+  let html=cells.map(c=>`
+    <div class="vtile${c.alert?' alert':''}" data-tip="${c.tip}" tabindex="0">
+      <span style="display:flex;justify-content:space-between;align-items:center;"><span class="lbl">${ico(c.ic)} ${c.k}</span>${c.alert?ico('trending_up'):''}</span>
+      <span class="num">${c.v}<span class="unit">${c.u}</span></span>
+      ${c.spark||''}
+    </div>`).join('');
+  if(p.fluid){
+    const tot=p.fluid.inn+p.fluid.out,inPct=(p.fluid.inn/tot*100).toFixed(0);
+    html+=`<div class="vtile" data-tip="24-hour fluid balance: intake versus output, in millilitres." tabindex="0"><span class="lbl">${ico('water_drop')} FLUID 24H</span>
+      <span class="num" style="font-size:19px;color:#5C7CF0;">+${p.fluid.inn-p.fluid.out}<span class="unit">ml</span></span>
+      <div><div class="fluid" role="img" aria-label="Fluid in ${p.fluid.inn}, out ${p.fluid.out} millilitres"><div class="in" style="width:${inPct}%"></div><div class="out" style="flex:1"></div></div>
+      <div class="fluidkey"><span>IN ${p.fluid.inn}</span><span>OUT ${p.fluid.out}</span></div></div></div>`;
+  }
+  return html;
+}
+function obsEventCard(){
+  return `<div class="eventcard" role="alert">
+    <h3>${ico('notifications_active')} 03:15 · Obs update · Alisha Mensah (Bed 4)</h3>
+    <p>Respiratory rate 14 → 21. NEWS 0 → 2. Marginal on its own. Against Priya's Thread, it reads as a trend.</p>
+    <div class="btnrow">
+      <button class="btn" onclick="obsDecide(true)">${ico('call')}Escalate to on-call doctor now</button>
+      <button class="btn ghost" onclick="obsDecide(false)">Watch and wait</button>
+    </div></div>`;
+}
+function obsDecide(escalate){
+  S.obsEventDone=true;S.obsEscalated=true;S.clock=escalate?'03:20':'05:45';
+  const a=S.patients.find(x=>x.id==='alisha');
+  a.news=2;a.newsHist=[...a.newsHist.slice(2),1,2];a.vit.rr.v=21;a.vit.rr.hist=[...a.vit.rr.hist.slice(2),18,21];
+  toast(escalate?'On-call doctor reviewing Alisha. Priya\u2019s read gave the trend four hours of head start.'
+               :'Noted. At 05:40 the RR reaches 24 and the doctor is called anyway. The Thread was the earlier signal.');
+  if(!S.tomThreadDone)setStep(4);
+  render();
+}
+
+/* ================= THREAD CARD (full color, text paramount) ================= */
+function authorAv(name){
+  const i=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const c=name.startsWith('Priya')?'#9FB4FF':(name.startsWith('Tom')?'#8FE0C0':'#D6C7A6');
+  return '<span class="avatar sm" style="background:'+c+';color:var(--ink);" aria-hidden="true">'+i+'</span>';
+}
+function tcard(t,mode){
+  const mine=(S.user==='priya'&&t.author.startsWith('Priya')&&t.status==='live'&&S.phase==='day');
+  const inherited=(S.phase==='night'&&t.status==='acknowledged');
+  const dark=(t.cat==='priority'||t.cat==='context');
+  return `
+  <div class="tcard ${t.cat} ${mode||''}" id="card-${t.id}">
+    <div class="thead">${ico(CATS[t.cat].ico)}${CATS[t.cat].label}
+      <span class="right">${t.status==='live'?'<span class="livedot"></span>LIVE':t.status.toUpperCase()}${inherited?' · DAY':''}${t.remind?' · '+ico('alarm')+t.remind:''}</span>
+    </div>
+    <div class="tmsg">${esc(t.msg)}</div>
+    ${t.img?'<img class="timg" src="'+t.img+'" alt="Photo attached to thread" loading="lazy" onerror="this.remove()">':''}
+    <div class="tfoot">
+      ${authorAv(t.author)}${esc(t.author)} · ${t.time}
+      <button class="detbtn" aria-expanded="false" onclick="event.stopPropagation();togDet('${t.id}',this)">${ico('unfold_more')}Details</button>
+    </div>
+    <div class="tdetails" id="det-${t.id}">
+      <div class="drow"><span>Status</span><span>${t.status}${t.renewals?' · renewed ×'+t.renewals:''}</span></div>
+      ${t.ack?'<div class="drow"><span>Received</span><span>'+esc(t.ack.by)+' · '+t.ack.time+'</span></div>':''}
+      ${t.remind?'<div class="drow"><span>Reminder</span><span>'+t.remind+' tonight</span></div>':''}
+      ${t.esc?'<div class="drow"><span>Record</span><span>'+t.esc+'</span></div>':''}
+      <div class="drow"><span>Rule</span><span>${mine?'Editable until handover begins':'Immutable after relay · exits by decision at shift end'}</span></div>
+      ${mine?`<div class="dact">
+        <button class="btn" onclick="event.stopPropagation();editThread('${t.id}')">${ico('edit')}Edit</button>
+        <button class="btn" onclick="event.stopPropagation();withdrawThread('${t.id}')">${ico('undo')}Withdraw</button></div>`
+      :(['live','acknowledged'].includes(t.status)?`<div class="dact">
+        <button class="btn" onclick="event.stopPropagation();resolveNow('${t.id}')">${ico('check')}Resolve now · concern passed</button></div>`:'')}
+    </div>
+  </div>`;
+}
+function togDet(id,btn){
+  const d=el('det-'+id);const open=!d.classList.contains('open');
+  d.classList.toggle('open',open);btn.setAttribute('aria-expanded',open);
+}
+function editThread(id){const t=S.threads.find(x=>x.id===id);S.editTarget=id;S.patientOpen=t.p;go('create');}
+function withdrawThread(id){S.threads.find(x=>x.id===id).status='resolved';toast('Thread withdrawn. Nothing was relayed, so nothing needs a decision.');render();}
+function reviewOldest(pid){
+  const t=threadsFor(pid).sort((a,b)=>a.time.localeCompare(b.time))[0];
+  openModal(`<h3 id="modalTitle">Review the oldest Thread</h3>
+    <p>Created at ${t.time} by ${esc(t.author)}. If it still matters, keep it. If it has passed, resolve it to make room.</p>
+    <div class="tgrid list">${tcard(t)}</div>
+    <div class="btnrow" style="margin-top:15px;">
+      <button class="btn" onclick="resolveFromCap('${t.id}','${pid}')">Resolve · then add new</button>
+      <button class="btn quiet" onclick="resolveOnly('${t.id}')">Resolve · nothing new</button>
+      <button class="btn ghost" onclick="closeModal()">Keep it</button>
+    </div>`);
+}
+function resolveOnly(id){
+  S.threads.find(x=>x.id===id).status='resolved';
+  closeModal();toast('Resolved. No new Thread created.');render();
+}
+function resolveNow(id){
+  const t=S.threads.find(x=>x.id===id);t.status='resolved';t.decided=true;
+  toast('Resolved early. Gone from the active set.');render();
+}
+function resolveFromCap(id,pid){
+  S.threads.find(x=>x.id===id).status='resolved';
+  closeModal();toast('Resolved. Room made deliberately, never silently.');
+  S.patientOpen=pid;go('create');
+}
+
+/* ================= COMPOSE (linear: write → categorise → set live) ================= */
+let composeCat=null;
+function rCreate(){
+  const p=S.patients.find(x=>x.id===S.patientOpen);const c=pcol(p.id);
+  const editing=S.editTarget?S.threads.find(x=>x.id===S.editTarget):null;
+  composeCat=editing?editing.cat:null;
+  return `
+  <button class="btn ghost" onclick="cancelCompose()" style="margin-bottom:14px;">${ico('arrow_back')}${esc(p.name.split(' ')[0])}</button>
+  <div class="pheader" style="margin-bottom:14px;padding:14px 18px;">
+    <span class="avatar" style="width:42px;height:42px;font-size:13px;">${initials(p.name)}</span>
+    <span><span class="pname" style="font-size:18px;">${editing?'Edit Thread':'New Thread'} · ${esc(p.name)}</span>
+    <span class="pdx" style="display:block;">Three steps: write it, name it, set it live.</span></span>
+    <span class="right"><span class="bedanchor"><span class="b">BED</span><span class="n">${p.bed}</span></span></span>
+  </div>
+  <div class="tilebox" style="max-width:720px;margin:0 auto;">
+    <span class="lbl">${ico('edit_note')} STEP 1 · YOUR READ, IN YOUR OWN WORDS</span>
+    <div style="display:flex;gap:10px;align-items:stretch;margin-top:11px;">
+      <textarea id="msg" maxlength="140" placeholder="e.g. Quieter than yesterday. Keep an eye overnight."
+        style="width:100%;min-height:104px;resize:vertical;font:inherit;font-weight:600;font-size:18px;line-height:1.45;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;color:var(--tx);background:var(--bg);"
+        aria-describedby="charlabel">${editing?esc(editing.msg):''}</textarea>
+      <button class="btn royal" style="min-width:58px;" onclick="speak()" aria-label="Dictate your read, simulated">${ico('mic')}</button>
+    </div>
+    <div style="height:7px;border-radius:99px;background:var(--card2);overflow:hidden;margin:11px 0 6px;"><div id="charfill" style="height:100%;width:0%;background:var(--cobalt);transition:width .1s;"></div></div>
+    <div class="pagesub" id="charlabel" style="margin:0;">0 of 140. The limit forces a read and forbids a note.</div>
+    <div class="banner warn" id="lint" role="alert" style="display:none;margin:12px 0 0;">
+      ${ico('science')} That looks like a clinical value. Numbers belong in the record, where they trend and audit.
+      <button class="btn quiet" style="margin-left:auto;" onclick="lintToRecord()">Put it in the record</button>
+      <button class="btn ghost" onclick="lintDismiss()">Keep as Thread</button>
+    </div>
+
+    <div class="section-label">${ico('category')} Step 2 · Name what kind of read it is</div>
+    <div style="display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));" role="group" aria-label="Thread category">
+      ${Object.keys(CATS).map(k=>`
+        <button id="cat-${k}" aria-pressed="false" onclick="pickCat('${k}')"
+          style="border:1.5px solid var(--line);background:var(--card2);border-radius:14px;padding:12px 14px;font-weight:700;font-size:13px;min-height:56px;text-align:left;display:flex;align-items:center;gap:11px;">
+          <span class="tdot ${k}" style="width:16px;height:16px;border-radius:5px;flex-shrink:0;"></span>
+          <span>${CATS[k].label}<span style="display:block;font-weight:600;color:var(--mut);font-size:11px;margin-top:1px;">${CATS[k].hint}</span></span>
+        </button>`).join('')}
+    </div>
+
+    <div class="section-label">${ico('send')} Step 3 · Set it live</div>
+    <button class="btn copper big" id="setlive" onclick="setLive()" disabled>${ico('send')}${editing?'Update Thread':'Set live'}</button>
+    <div class="whydisabled" id="why"></div>
+    <p class="pagesub" style="margin:9px 0 0;">Live means the 19:30 handover carries it. Your name travels with it: attribution is the trust model.</p>
+  </div>`;
+}
+function cancelCompose(){S.editTarget=null;go('patient',{p:S.patientOpen});}
+function wireCompose(){const ta=el('msg');ta.addEventListener('input',composeCheck);composeCheck();if(composeCat)pickCat(composeCat,true);ta.focus();}
+function composeCheck(){
+  const ta=el('msg');const n=ta.value.length;
+  el('charfill').style.width=Math.min(100,n/140*100)+'%';
+  el('charfill').style.background=n>=140?'var(--redg)':(n>110?'var(--amber)':'var(--cobalt)');
+  el('charlabel').textContent=n+' of 140. '+(n>=140?'Full. More than this is two thoughts, or a record entry.':'The limit forces a read and forbids a note.');
+  const clinical=/\b\d+(\.\d+)?\s?(mmol|mg|mcg|kpa|bpm|mmhg|°)|\b(k|na|crp|hb|creat|glucose)\s?[:=]?\s?\d/i.test(ta.value);
+  el('lint').style.display=(clinical&&!S.lintDismissed)?'flex':'none';
+  validateCompose();
+}
+function pickCat(c){composeCat=c;Object.keys(CATS).forEach(k=>{const b=el('cat-'+k);const on=k===c;b.setAttribute('aria-pressed',on);b.style.borderColor=on?CATS[k].c:'var(--line)';b.style.background=on?'var(--card)':'var(--card2)';});validateCompose();}
+function validateCompose(){
+  const okMsg=el('msg').value.trim().length>=4,okCat=!!composeCat;
+  el('setlive').disabled=!(okMsg&&okCat);
+  el('why').innerHTML=(okMsg&&okCat)?'':(ico('info')+'<span>Set live is off: '+(!okMsg?'write at least a short sentence in step 1':'')+((!okMsg&&!okCat)?', and ':'')+(!okCat?'pick one category in step 2':'')+'.</span>');
+}
+function speak(){
+  const ta=el('msg');
+  const sample=(S.patientOpen==='alisha'&&S.user==='priya')?'Quieter than yesterday. Keep an eye overnight.'
+    :(S.patientOpen==='margaret'?'Wakes distressed around 4am. A quiet word settles her faster than anything.'
+    :'Family asking the same questions each visit. Keep answers consistent.');
+  ta.value=sample;
+  if(S.patientOpen==='alisha'&&S.user==='priya')pickCat('comparison');
+  if(S.patientOpen==='margaret'&&S.user==='tom')pickCat('pattern');
+  composeCheck();toast('Transcribed verbatim. The AI never rewords a read.');
+}
+function lintToRecord(){
+  openModal(`<h3 id="modalTitle">Straight to the record</h3>
+    <p>Clinical values are factual continuity. They belong in the EPR, where they trend, alert, and persist.</p>
+    <div class="epr"><b>EPR quick entry · attributed to ${S.user==='tom'?'Tom R, RN':'Priya K, RN'}</b><br>${esc(el('msg')?el('msg').value:'')}</div>
+    <div class="btnrow"><button class="btn" onclick="closeModal();cancelCompose();toast('Filed to the record. No Thread created.')">File to record</button>
+    <button class="btn ghost" onclick="closeModal()">Back</button></div>`);
+}
+function lintDismiss(){S.lintDismissed=true;el('lint').style.display='none';toast('Kept as a Thread. You outrank the lint.');}
+function setLive(){
+  const msg=el('msg').value.trim();
+  if(S.editTarget){
+    const t=S.threads.find(x=>x.id===S.editTarget);t.msg=msg;t.cat=composeCat;S.editTarget=null;
+    toast('Thread updated. Still yours until handover begins.');
+  }else{
+    S.threads.push({id:uid(),p:S.patientOpen,cat:composeCat,msg,author:S.user==='tom'?'Tom R, RN':'Priya K, RN',
+      time:S.phase==='day'?'18:42':'23:05',status:'live',renewals:0,ack:null,esc:null});
+    if(S.user==='priya'){S.clock='18:42';toast('Thread live in 12 seconds. It travels at the 19:30 handover.');if(S.step===1)setStep(2);}
+    else{S.tomThreadDone=true;S.clock='23:05';toast('Thread live. The next handover carries your read forward.');if(S.obsEventDone)setStep(4);}
+  }
+  S.lintDismissed=false;go('patient',{p:S.patientOpen});
+}
+
+/* ================= HANDOVER · FOCUS STACK ================= */
+function startHo(){
+  S.fabHo=false;S.hoStarted=true;S.hoIndex=0;S.hoT=0;S.clock='19:30';
+  S.threads.forEach(t=>{if(t.status==='live')t.status='relayed';});
+  go('handover');
+}
+function hoThreads(p){return S.threads.filter(t=>t.p===p.id&&['relayed','acknowledged'].includes(t.status));}
+function rHo(){
+  const p=S.patients[S.hoIndex];const ts=hoThreads(p);
+  const pend=ts.filter(t=>t.status==='relayed');
+  const dots=S.patients.map((_,i)=>'<span class="'+(i<S.hoIndex?'done':(i===S.hoIndex?'now':''))+'"></span>').join('');
+  const facts=`<details class="tilebox" style="margin:0 0 12px;padding:12px 16px;">
+    <summary class="lbl" style="cursor:pointer;list-style:none;">${ico('smart_toy')} FACTS · AMBIENT AI<span class="ms chev" aria-hidden="true">expand_more</span></summary>
+    <ul style="list-style:none;margin-top:10px;">${p.ai.map(l=>'<li style="font-weight:600;font-size:13px;padding:4px 0 4px 24px;position:relative;"><span class="ms" style="position:absolute;left:0;top:5px;font-size:14px;color:var(--cobalt-soft);">check</span>'+esc(l)+'</li>').join('')}</ul>
+  </details>`;
+  return `
+  <div style="max-width:900px;margin:0 auto;">
+  <div class="ho-progress" aria-label="Handover progress, patient ${S.hoIndex+1} of 5">${dots}</div>
+  <div class="hp-strip">
+    <span class="avatar">${initials(p.name)}</span>
+    <span style="min-width:0;"><span class="pname" style="font-size:16px;">${esc(p.name)}</span>
+    <span class="pdx" style="font-size:11px;">${esc(p.dx)}</span></span>
+    <span style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+      <span style="font-weight:700;font-size:13px;">NEWS ${p.news}</span>
+      <span class="bedanchor" style="padding:6px 10px 5px;"><span class="b">BED</span><span class="n" style="font-size:17px;">${p.bed}</span></span>
+    </span>
+  </div>
+  ${facts}
+  ${ts.length
+    ? `<div class="tgrid list">${ts.map(t=>hoCard(t)).join('')}</div>`
+    : `<div class="tilebox" style="text-align:center;color:var(--mut);font-weight:600;">No Threads for ${esc(p.name.split(' ')[0])}. The facts are the whole story today.</div>`}
+  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+    ${S.hoIndex>0?'<button class="btn ghost" onclick="S.hoIndex--;render()">'+ico('arrow_back')+'Back</button>':''}
+    ${pend.length
+      ? `<button class="btn big" style="flex:2;min-width:220px;" onclick="ackAll('${p.id}')">${ico('done_all')}Acknowledge all ${pend.length} · next patient</button>
+         <button class="btn ghost" style="flex:1;" onclick="hoNext()">Skip · leaves ${pend.length} unacknowledged</button>`
+      : `<button class="btn big" style="flex:1;" onclick="hoNext()">${S.hoIndex<4?'Next patient':'Finish handover'}${ico('arrow_forward')}</button>`}
+  </div>
+  <div class="legend">
+    <span>${ico('done_all')} Acknowledge means received, never agreed. One tap covers the patient.</span>
+    <span>${ico('replay')} Renew, at shift end, keeps a Thread watching for one more shift, three at most.</span>
+    <span>${ico('upload_file')} Record, at shift end, files it permanently into the EPR with both names.</span>
+  </div>
+  </div>`;
+}
+function hoCard(t){
+  const acked=t.status==='acknowledged';
+  return `
+  <div class="tcard ${t.cat}" style="min-height:0;">
+    <div class="hocard">
+      <div class="hleft">
+        <div class="thead">${ico(CATS[t.cat].ico)}${CATS[t.cat].label}
+          <span class="right">${esc(t.author.split(',')[0])} · ${t.time}${t.renewals?' · ×'+t.renewals:''}${t.remind?' · '+ico('alarm')+t.remind:''}</span></div>
+        <div class="tmsg" style="font-size:17px;">${esc(t.msg)}</div>
+        ${t.img?'<img class="timg" src="'+t.img+'" alt="Photo attached to thread" loading="lazy" onerror="this.remove()">':''}
+      </div>
+      <div class="hacts">
+        ${acked
+          ? '<span class="btn onink" style="min-height:44px;cursor:default;">'+ico('check_circle')+'Received</span>'
+          : '<button class="btn onink" onclick="ackOne(\''+t.id+'\')">'+ico('done_all')+'Acknowledge</button>'}
+        <button class="btn onink" onclick="addReminder('${t.id}')" aria-label="Add reminder for this thread">${ico('alarm_add')}${t.remind?t.remind:'Remind'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function ackOne(id){
+  const t=S.threads.find(x=>x.id===id);
+  t.status='acknowledged';t.ackm=(32+S.hoIndex*2);t.ack={by:'Tom R, RN',time:'19:'+t.ackm};
+  render();
+}
+function ackAll(pid){
+  hoThreads({id:pid}).forEach(t=>{if(t.status==='relayed'){t.status='acknowledged';t.ackm=(32+S.hoIndex*2);t.ack={by:'Tom R, RN',time:'19:'+t.ackm};}});
+  if(S.hoIndex<4){S.hoIndex++;toast('Acknowledged. Next patient.');}
+  render();
+}
+function addReminder(id){
+  const t=S.threads.find(x=>x.id===id);
+  openModal(`<h3 id="modalTitle">Remind Tom tonight</h3>
+    <p>A quiet, local nudge on the night board. It never pages and never leaves the ward tablet.</p>
+    <div class="btnrow">
+      ${['22:00','00:00','02:00','04:00'].map(tt=>'<button class="btn quiet" onclick="setRem(\''+id+'\',\''+tt+'\')">'+tt+'</button>').join('')}
+    </div>
+    <div class="btnrow" style="margin-top:10px;"><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+}
+function setRem(id,tt){
+  S.threads.find(x=>x.id===id).remind=tt;
+  closeModal();toast('Reminder set for '+tt+'. It will sit on the night board, not in a pager.');render();
+}
+function hoNext(){
+  if(S.hoIndex<4){S.hoIndex++;S.hoT=0;render();return;}
+  const unacked=S.threads.filter(t=>t.status==='relayed');
+  if(unacked.length){
+    openModal(`<h3 id="modalTitle">${unacked.length} Thread${unacked.length>1?'s':''} not acknowledged</h3>
+      <p>Receipt is explicit in Thread. Anything unacknowledged flags quietly to the nurse in charge after 60 minutes: patient and category only, never the message.</p>
+      <div class="tgrid list">${unacked.map(t=>tcard(t)).join('')}</div>
+      <div class="btnrow" style="margin-top:15px;">
+        <button class="btn ghost" onclick="closeModal()">Go back and acknowledge</button>
+        <button class="btn warn" onclick="finishHo(true)">Finish anyway · let it flag</button>
+      </div>`);
+  }else finishHo(false);
+}
+function finishHo(flagged){
+  closeModal();
+  if(flagged){S.eileenFlag=S.threads.some(t=>t.status==='relayed'&&t.p==='eileen');S.flagTime='20:34';}
+  S.phase='night';setUser('tom');S.clock='22:10';setStep(3);
+  toast('Handover complete. You are now Tom R, night shift.');
+  go('ward');
+}
+
+/* ================= CHARGE ================= */
+S.chargeMode=S.chargeMode||'heat';
+function setCharge(m){S.chargeMode=m;render();}
+function rCharge(){
+  const hours=['08','09','10','11','12','13','14','15','16','17','18','19'];
+  return `
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <h1 class="pagetitle" style="margin-right:auto;">Charge view</h1>
+    <span class="segbig" role="group" aria-label="Charge layout">
+      <button aria-pressed="${S.chargeMode==='heat'}" onclick="setCharge('heat')">${ico('grid_on')} Heat grid</button>
+      <button aria-pressed="${S.chargeMode==='cards'}" onclick="setCharge('cards')">${ico('grid_view')} Bay cards</button>
+    </span>
+  </div>
+  <p class="pagesub">NEWS per hour, per bed. The row chip is the patient's color. Thread density right: counts and categories only, never messages. Content access is logged.</p>
+  ${S.chargeMode==='cards'?chargeCards():`<div class="tilebox" style="overflow-x:auto;">
+    <table style="border-collapse:separate;border-spacing:5px;width:100%;min-width:640px;" aria-label="NEWS heat grid, beds by hour">
+      <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.14em;color:var(--mut);padding:0 6px;">BED · PATIENT</th>
+        ${hours.map(h=>'<th style="font-size:9.5px;color:var(--mut);font-weight:700;">'+h+'</th>').join('')}
+        <th style="font-size:10px;letter-spacing:.14em;color:var(--mut);">THREADS</th></tr></thead>
+      <tbody>
+      ${S.patients.map(p=>{const ts=threadsFor(p.id);
+        return '<tr><td style="padding:0 6px;white-space:nowrap;"><button style="border:none;background:none;display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13px;padding:6px 4px;" onclick="go(\'patient\',{p:\''+p.id+'\'})">B'+p.bed+' · '+esc(p.name.split(' ')[0])+'</button></td>'+
+        p.newsHist.map(v=>'<td style="padding:0;"><div style="height:34px;min-width:34px;border-radius:10px;background:'+newsHeat(v)+';display:grid;place-items:center;font-weight:700;font-size:12.5px;color:'+(v>=2?'#FFF1E8':'#141110')+';" role="img" aria-label="NEWS '+v+'">'+v+'</div></td>').join('')+
+        '<td style="text-align:center;"><span style="display:inline-flex;gap:3px;">'+(ts.map(t=>'<span class="tdot '+t.cat+'"></span>').join('')||'<span style="font-size:10px;color:var(--mut);font-weight:700;">0</span>')+'</span>'+
+        ((S.eileenFlag&&p.id==='eileen')?'<div style="font-size:9px;font-weight:700;color:#E9C87E;letter-spacing:.08em;margin-top:3px;">FLAG 19:34</div>':'')+'</td></tr>';}).join('')}
+      </tbody></table>
+    <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;align-items:center;">
+      <span class="lbl">NEWS SCALE</span>
+      ${NEWS_SCALE.map((c,i)=>'<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--mut);"><span style="width:13px;height:13px;border-radius:4px;background:'+c+';"></span>'+i+(i===5?'+':'')+'</span>').join('')}
+    </div>
+  </div>`}
+  `;
+}
+function chargeCards(){
+  return '<div class="pgrid '+S.view+'">'+S.patients.map(p=>{
+    const ts=threadsFor(p.id);
+    return `<button class="pcard" onclick="go('patient',{p:'${p.id}'})" aria-label="Open ${esc(p.name)}">
+      <span class="top"><span class="avatar">${initials(p.name)}</span>
+        <span style="min-width:0;"><span class="pname">${esc(p.name)}</span><span class="pdx">${ts.length} active thread${ts.length===1?'':'s'}</span></span>
+        <span class="bedanchor"><span class="b">BED</span><span class="n">${p.bed}</span></span></span>
+      <span class="mid"><span class="newsmini"><span><span class="nk">NEWS</span><span class="nv">${p.news}</span></span></span>
+        <span class="ringwrap">${threadRing(ts,54,7)}<span class="rk">THREADS</span></span></span>
+      ${(S.eileenFlag&&p.id==='eileen')?'<span class="foot"><span class="pflag">'+ico('flag')+'unack 19:34</span></span>':''}
+    </button>`;
+  }).join('')+'</div>';
+}
+
+/* ================= END OF SHIFT ================= */
+function rEnd(){
+  S.clock='07:00';
+  const pending=S.threads.filter(t=>['acknowledged','live'].includes(t.status)&&!t.decided);
+  if(!pending.length)return rSummary();
+  return `
+  <h1 class="pagetitle">End of shift · decide every Thread</h1>
+  <p class="pagesub">Nothing persists without a human decision. Resolve is deliberately the easiest tap.</p>
+  <div class="legend" style="margin:0 0 14px;">
+    <span>${ico('check')} Resolve: the concern has passed. Purged after 72 hours.</span>
+    <span>${ico('replay')} Renew: still worth watching. Re-enters the 07:30 handover, three renewals at most.</span>
+    <span>${ico('upload_file')} Record: now clinically material. Files permanently into the EPR with both names.</span>
+  </div>
+  ${S.patients.filter(p=>pending.some(t=>t.p===p.id)).sort((a,b)=>a.bed-b.bed).map(p=>`
+    <div class="hp-strip" style="margin:20px 0 12px;">
+      <span class="avatar">${initials(p.name)}</span>
+      <span style="min-width:0;"><span class="pname" style="font-size:16px;">${esc(p.name)}</span>
+      <span class="pdx" style="font-size:11px;">${esc(p.dx)}</span></span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+        <span style="font-weight:700;font-size:13px;">${pending.filter(t=>t.p===p.id).length} to decide</span>
+        <span class="bedanchor" style="padding:6px 10px 5px;"><span class="b">BED</span><span class="n" style="font-size:17px;">${p.bed}</span></span>
+      </span>
+    </div>
+    <div class="tgrid list">${pending.filter(t=>t.p===p.id).map(t=>endCard(t)).join('')}</div>`).join('')}`;
+}
+function endCard(t){
+  const p=S.patients.find(x=>x.id===t.p);const capReached=t.renewals>=3;
+  const hints=[];
+  if(t.p==='alisha'&&S.obsEscalated)hints.push(ico('stethoscope')+' Under doctor review since 03:20: Record is its natural exit.');
+  if(p.discharge)hints.push(ico('logout')+' Discharge planned: file into the transfer letter, or resolve.');
+  if(capReached)hints.push(ico('block')+' Renew is off: renewed three times already. A concern that crosses four shifts has either passed or belongs in the record.');
+  return `
+  <div class="tcard ${t.cat}">
+    <div class="thead">${ico(CATS[t.cat].ico)}${CATS[t.cat].label}
+      <span class="right">${t.time}${t.renewals?' · ×'+t.renewals:''}${t.remind?' · '+ico('alarm')+t.remind:''}</span></div>
+    <div class="tmsg">${esc(t.msg)}</div>
+    ${hints.length?'<div class="tdetails open">'+hints.join('<br>')+'</div>':''}
+    <div class="decide">
+      <button class="btn onink" onclick="decide('${t.id}','resolve')">${ico('check')}Resolve</button>
+      <button class="btn onink" onclick="decide('${t.id}','renew')" ${capReached?'disabled':''} title="${capReached?'Renewal cap of three reached: resolve or file to record instead':'Keep watching for one more shift'}">${ico('replay')}Renew</button>
+      <button class="btn onink" onclick="decide('${t.id}','escalate')">${ico('upload_file')}${p.discharge?'Transfer':'Record'}</button>
+    </div>
+  </div>`;
+}
+function decide(id,action){
+  const t=S.threads.find(x=>x.id===id);const p=S.patients.find(x=>x.id===t.p);
+  if(action==='resolve'){t.status='resolved';t.decided=true;toast('Resolved. Purged from the active set, gone entirely after 72 hours.');render();checkEnd();}
+  if(action==='renew'){t.renewals++;t.status='live';t.decided=true;toast('Renewed ×'+t.renewals+'. It re-enters the 07:30 handover as live.');render();checkEnd();}
+  if(action==='escalate'){
+    openModal(`<h3 id="modalTitle">Escalate into the ${p.discharge?'transfer letter':'record'}</h3>
+      <p>The Thread closes and points to its permanent successor. Both names travel.</p>
+      <div class="epr"><b>EPR entry · pre-filled, complete before filing</b><br><br>
+      <b>Patient:</b> ${esc(p.name)} · Bed ${p.bed}<br>
+      <b>Nursing observation (verbatim Thread):</b> ${esc(t.msg)}<br>
+      <b>Originating author:</b> ${esc(t.author)} · ${t.time}<br>
+      <b>Escalated by:</b> Tom R, RN · 07:0${(idc%9)+1}<br>
+      <b>Clinical context:</b> <span style="opacity:.6;">[nurse completes: events, actions, plan]</span></div>
+      <div class="btnrow">
+        <button class="btn royal" onclick="fileEsc('${t.id}')">${ico('upload_file')}File</button>
+        <button class="btn ghost" onclick="closeModal()">Back</button>
+      </div>`);
+  }
+}
+function fileEsc(id){
+  const t=S.threads.find(x=>x.id===id);
+  t.status='escalated';t.decided=true;t.esc='EPR-2026-7B-0'+(++idc);
+  closeModal();toast('Filed. Thread closed with a link to its successor: '+t.esc);
+  render();checkEnd();
+}
+function checkEnd(){
+  const pending=S.threads.filter(t=>['acknowledged','live'].includes(t.status)&&!t.decided);
+  if(!pending.length){S.endQueueDone=true;S.phase='done';setStep(5);S.clock='07:30';go('summary');}
+}
+
+/* ================= SUMMARY ================= */
+function rSummary(){
+  const created=S.threads.length,acked=S.threads.filter(t=>t.ack).length,
+    resolved=S.threads.filter(t=>t.status==='resolved').length,
+    renewed=S.threads.filter(t=>t.decided&&t.status==='live').length,
+    escd=S.threads.filter(t=>t.status==='escalated').length;
+  return `
+  <div class="hero" style="background:var(--royal);color:var(--royaltx);grid-template-columns:1fr;">
+    <div><h1 style="color:#fff;">Twenty-four hours. Nothing rebuilt from scratch.</h1>
+    <p>Priya's read crossed the handover, primed Tom's first round, and turned a marginal 03:15 obs change into an early escalation. ${created} threads carried, ${acked} acknowledged at relay, ${resolved} resolved, ${renewed} renewed to the next shift, ${escd} promoted into the record they never tried to replace.</p></div>
+  </div>
+  <div class="section-label">The relay, replayed</div>
+  <div class="relayline" aria-label="Thread lifecycle timeline">
+    <div class="relaynode"><span class="dotk"></span><span class="rl">18:42<br>Created</span></div><span class="relayseg"></span>
+    <div class="relaynode"><span class="dotk"></span><span class="rl">19:30<br>Relayed</span></div><span class="relayseg"></span>
+    <div class="relaynode"><span class="dotk"></span><span class="rl">19:34<br>Acknowledged</span></div><span class="relayseg"></span>
+    <div class="relaynode"><span class="dotk"></span><span class="rl">22:10<br>First round</span></div><span class="relayseg"></span>
+    <div class="relaynode"><span class="dotk"></span><span class="rl">03:15<br>Early catch</span></div><span class="relayseg"></span>
+    <div class="relaynode"><span class="dotk" style="border-color:var(--cobalt);"></span><span class="rl">07:10<br>To record</span></div>
+  </div>
+  <div class="btnrow" style="margin-top:18px;">
+    <button class="btn big" style="flex:1;" onclick="resetDemo()">${ico('replay')}Replay the demo</button>
+    <button class="btn ghost big" style="flex:1;" onclick="go('ward')">Keep exploring</button>
+  </div>`;
+}
+
+
+/* ================= EPR INTEGRATION VIEW ================= */
+const EPR={
+  menuFor:null, composing:false, cat:null,
+  threads:[
+    {id:'e1',cat:'concern',msg:'Much quieter today. Could be more unwell than the NEWS shows.',author:'Priya K, RN',time:'18:40',ack:null,anchor:'NEWS trend',status:'live'},
+    {id:'e2',cat:'context',msg:'Family unusually anxious after the 14:00 meeting. Keep answers consistent.',author:'Priya K, RN',time:'18:20',ack:{by:'Tom R, RN',at:'19:10'},anchor:null,status:'live'},
+  ],
+};
+const EPR_LOGO=`<svg height="19" style="width:auto;display:block;" viewBox="0 0 870 237" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_242_33)">
+<path d="M223.686 34.3644L223.651 115.149L143.586 115.111C143.822 100.592 137.912 86.8279 128.077 75.6196C129.769 74.8132 131.504 74.5454 133.463 74.3503L172.334 74.3241V53.3282L133.137 53.3748C125.376 53.8319 118.336 56.4345 111.789 60.4375V0.0349392L185.778 4.23073e-06C192.96 -0.00290702 199.572 1.49638 205.639 5.30721C215.988 11.4936 222.815 22.4719 223.686 34.3644Z" fill="#D2292B"/>
+<path d="M111.789 0.0349121V60.4345L106.598 57.7329C101.405 55.0313 95.9722 53.7008 90.0187 53.3602L51.2874 53.3282L51.2933 74.3241L88.5514 74.3357C90.8687 74.3561 92.8891 74.6356 95.1599 75.5293C85.3665 86.6474 79.3868 100.426 79.5935 115.09L0.00292969 115.154L0.0262197 35.6103C0.0320422 17.648 16.827 0.180474 35.328 0.151362L111.789 0.0349121Z" fill="#233C75"/>
+<path d="M223.654 115.149L223.674 187.813C223.627 206.515 208.032 222.789 189.31 223.697L144.078 224L144.069 200.317C144.005 190.364 141.492 180.946 136.846 172.177C133.818 166.445 129.99 161.423 125.486 156.622C136.133 144.794 143.329 131.07 143.588 115.111L223.654 115.149Z" fill="#233C75"/>
+<path d="M79.5906 115.093C79.9923 131.018 86.9589 144.803 97.6694 156.576C91.3607 163.187 86.5077 170.573 83.2325 178.966C80.429 186.067 79.0898 193.281 79.084 200.92L79.0723 223.986L34.1722 223.674C15.6741 222.754 0.133917 206.637 0.107716 188.107L0 115.157L79.5906 115.093Z" fill="#F4AF31"/>
+<path d="M111.996 171.519L111.74 223.892L99 223.901L99.0204 199.473C99.0262 191.318 101.789 183.738 106.456 177.187L111.213 171.423C111.317 171.295 111.6 171.208 111.673 171.266C111.745 171.324 111.716 171.539 111.993 171.519H111.996Z" fill="#F4AF31"/>
+<path d="M111.739 223.892L111.995 171.519C118.648 178.314 124.033 188.692 124.071 198.32L124.173 223.916L111.739 223.892Z" fill="#233C75"/>
+<path d="M111.911 115.157L111.868 141.845C111.696 142.031 111.702 142.08 111.501 142.008C111.355 141.955 111.291 141.813 111.149 141.658C106.965 137.114 103.46 132.048 101.332 126.226C100.001 122.59 99.2999 118.997 99.1572 115.483" fill="#233C75"/>
+<path d="M99.1568 115.483C98.7318 104.942 103.358 95.1163 111.236 87.0405C111.378 86.892 111.565 86.8251 111.675 86.8513C111.765 86.8746 111.859 87.0318 111.96 87.1366L111.914 115.16" fill="#233C75"/>
+<path d="M111.911 115.713L111.961 87.1365C122.578 97.9256 127.248 112.307 121.562 126.802C119.335 132.479 115.984 137.379 111.868 141.845L111.911 115.713Z" fill="#D32C2D"/>
+</g>
+<path d="M364.5 77.25L366.15 78.9V98.1L364.5 99.75H337.65V178.35L336 180H315.75L314.1 178.35V99.75H287.4L285.75 98.1V78.9L287.4 77.25H364.5ZM460.491 77.25L461.991 78.9V178.35L460.491 180H440.091L438.441 178.35V138.45H404.691V178.35L403.041 180H382.791L381.141 178.35V78.9L382.791 77.25H403.041L404.691 78.9V115.95H438.441V78.9L440.091 77.25H460.491ZM486.209 77.25H526.259C538.659 77.25 548.159 80.5 554.759 87C561.459 93.4 564.809 101.5 564.809 111.3C564.809 123.4 560.059 132.6 550.559 138.9L566.009 178.35L564.809 180H543.059L540.809 178.5L528.359 145.2H508.109V178.35L506.459 180H486.209L484.559 178.35V78.9L486.209 77.25ZM537.659 120.3C540.059 117.8 541.259 114.8 541.259 111.3C541.259 107.8 540.059 104.85 537.659 102.45C535.259 100.05 531.959 98.85 527.759 98.85H508.109V123.9H527.759C531.959 123.9 535.259 122.7 537.659 120.3ZM662.293 157.5L663.943 159.15V178.35L662.293 180H586.843L585.193 178.35V78.9L586.843 77.25H661.993L663.643 78.9V98.1L661.993 99.75H608.743V115.2H646.393L648.043 116.85V135.15L646.393 136.8H608.743V157.5H662.293ZM737.317 78.9L767.017 178.35L765.367 180H744.067L742.417 178.35L737.017 159H704.617L699.217 178.35L697.567 180H676.867L675.217 178.35L704.917 78.9L706.567 77.25H735.667L737.317 78.9ZM721.117 100.5L710.617 137.85H731.317L721.117 100.5ZM782.107 77.25H820.507C832.607 77.25 842.357 80.1 849.757 85.8C857.157 91.4 860.857 99.8 860.857 111V146.25C860.857 157.45 857.157 165.9 849.757 171.6C842.357 177.2 832.607 180 820.507 180H782.107L780.457 178.35V78.9L782.107 77.25ZM837.307 143.7V113.55C837.307 108.85 835.757 105.2 832.657 102.6C829.657 99.9 825.607 98.55 820.507 98.55H804.007V158.7H820.507C825.607 158.7 829.657 157.4 832.657 154.8C835.757 152.1 837.307 148.4 837.307 143.7Z" fill="black"/>
+<defs>
+<clipPath id="clip0_242_33">
+<rect width="223.686" height="224" fill="white"/>
+</clipPath>
+</defs>
+</svg>`;
+function rEpr(){
+  return `
+  <div class="eprv" id="eprv">
+    <button class="btn ghost" onclick="go('ward')" style="margin-bottom:12px;">${ico('arrow_back')}Back to Thread</button>
+    <h1 class="pagetitle">How Thread meets the EPR</h1>
+    <p class="lede">Thread does not replace the record. It renders <b>inside</b> the hospital EPR as a companion panel, while its data lives in Thread's own store with its own retention rules. Nothing crosses into the permanent record until a nurse escalates it. This is a working concept: open the Thread panel, act on a read, and watch an escalation file back into the EPR notes.</p>
+    <div class="frame">
+      <div class="etop">
+        <span class="sys">${ico('local_hospital')}MedChart EPR</span>
+        <span class="env">PROD · WARD 7B</span>
+        <span class="right">T. Rowe, RN</span>
+      </div>
+      <div class="ebanner">
+        <span class="pn">HALE, Margaret</span>
+        <span class="dm">92 F · NHS 943 476 5919 · Bed 6</span>
+        <span class="echip al">${ico('warning')} Penicillin</span>
+        <span class="echip">DNACPR in place</span>
+        <button class="tchip" onclick="eprToggleDrawer()" aria-label="Open Thread panel">
+          <span class="k" aria-hidden="true"></span>Thread<span class="c" id="eprcount">${EPR.threads.filter(t=>t.status==='live').length}</span>
+        </button>
+      </div>
+      <div class="etabs"><span class="on">Overview</span><span>Observations</span><span>Medications</span><span>Notes</span><span>Orders</span><span>Results</span></div>
+      <div class="stage">
+        <div class="eprcol">
+          <div class="egrid">
+            <div class="ep w6" id="eprNews">
+              <div class="eh">${ico('monitoring')}NEWS2 · latest</div>
+              <div class="eb">
+                <div class="news"><span class="n">1</span>
+                  <svg width="140" height="30" viewBox="0 0 140 30" aria-label="NEWS trend"><polyline points="4,18 18,18 32,11 46,18 60,18 74,11 88,18 102,18 116,18 134,18" fill="none" stroke="#2F5FA5" stroke-width="2"/><circle cx="134" cy="18" r="3" fill="#2F5FA5"/></svg>
+                </div>
+                <div style="font-size:10px;color:var(--emut);font-weight:600;margin-top:5px;">LAST SET 18:20 · P. Kaur RN · RR 17 · SpO2 96% · HR 88 · 36.8</div>
+              </div>
+            </div>
+            <div class="ep w6">
+              <div class="eh">${ico('clinical_notes')}Clinical overview</div>
+              <div class="eb">
+                <div class="ekv"><span>Diagnosis</span><b>Frailty · delirium screen +ve</b></div>
+                <div class="ekv"><span>4AT</span><b>Positive (08:15)</b></div>
+                <div class="ekv"><span>Consultant</span><b>Dr A. Rahman</b></div>
+              </div>
+            </div>
+            <div class="ep w12" id="eprNotes">
+              <div class="eh">${ico('description')}Notes · latest</div>
+              <div class="eb" id="eprNotesList">
+                <div class="enote"><div class="nh">14:20 · Family meeting · Dr A. Rahman</div><div class="nb">Discussed delirium pathway with daughter. Questions re prognosis; leaflet given.</div></div>
+                <div class="enote"><div class="nh">08:30 · Ward round · Dr A. Rahman</div><div class="nb">Stable overnight. Continue delirium bundle, chase screen bloods.</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="mobcue" style="padding:0 14px 14px;">
+            <button class="ebtn big" onclick="eprToggleDrawer()">${ico('dataset_linked')}Open the Thread panel</button>
+          </div>
+        </div>
+        <aside class="edrawer" id="edrawer" aria-label="Thread companion panel">
+          <div class="dh">
+            <span class="logo" aria-label="Thread">${EPR_LOGO}</span>
+            <span class="hg">
+              <button class="nb" id="eprNewBtn" onclick="EPR.composing=true;eprRender()" aria-label="New Thread">${ico('add')}New</button>
+              <button class="cl" onclick="eprToggleDrawer()" aria-label="Collapse panel">${ico('close')}</button>
+            </span>
+          </div>
+          <div class="dsub"><b>Margaret Hale · Bed 6</b> · rendered in the EPR, stored apart · signed in as Tom R, RN</div>
+          <div class="dbody" id="eprBody"></div>
+          <div class="dfoot">Nothing here enters the record unless a nurse escalates it. Unresolved Threads expire at 07:30 handover. Content access is logged.</div>
+        </aside>
+      </div>
+    </div>
+    <div class="flowrow">
+      <div class="flowstep"><div class="sn">1</div><h4>Rendered in context</h4><p>Thread launches as a panel inside the EPR in patient context, using standard app-embedding (SMART on FHIR).</p></div>
+      <div class="flowstep"><div class="sn">2</div><h4>Stored apart</h4><p>Reads live in Thread's store with a shift-clock lifecycle, not in the medical record. Different governance, different retention.</p></div>
+      <div class="flowstep"><div class="sn">3</div><h4>Escalation is the bridge</h4><p>Only escalation writes back: one governed note with dual attribution. Everything else expires at handover.</p></div>
+    </div>
+  </div>`;
+}
+function eprRender(){
+  const drawer=el('edrawer'); if(!drawer) return;
+  const live=EPR.threads.filter(t=>t.status==='live');
+  const cnt=el('eprcount'); if(cnt) cnt.textContent=live.length;
+  el('eprBody').innerHTML=(EPR.composing?eprCompose():'')+live.map(eprCard).join('')+eprGhosts();
+  const nb=el('eprNewBtn'); if(nb) nb.style.display=EPR.composing?'none':'inline-flex';
+  if(EPR.composing) eprWire();
+}
+function eprToggleDrawer(){
+  const v=el('eprv'); if(v) v.classList.toggle('showdrawer');
+  eprRender();
+  const bd=el('eprBody'); if(bd) bd.scrollTop=0;
+}
+function eprCard(t){
+  const menu=EPR.menuFor===t.id?eprMenu(t):'';
+  const meta=esc(t.author)+' · '+t.time+(t.ack?' · acknowledged '+t.ack.at:' · live')+' · expires 07:30';
+  return `
+  <div class="ecard ${t.cat}">
+    <button class="kbb" aria-haspopup="menu" aria-expanded="${EPR.menuFor===t.id}" aria-label="Actions" onclick="event.stopPropagation();eprMenuFor('${t.id}')">${ico('more_horiz')}</button>
+    <div class="th">${ico(CATS[t.cat].ico)}${CATS[t.cat].label}</div>
+    <div class="tm">${esc(t.msg)}</div>
+    <div class="mt">${meta}</div>
+    ${menu}
+  </div>`;
+}
+function eprMenu(t){
+  const it=[];
+  if(!t.ack) it.push('<button onclick="event.stopPropagation();eprAck(\''+t.id+'\')">'+ico('done_all')+'Acknowledge · received</button>');
+  if(t.anchor) it.push('<button onclick="event.stopPropagation();EPR.menuFor=null;eprFlash();eprRender()">'+ico('my_location')+'Show anchor · '+t.anchor+'</button>');
+  it.push('<button onclick="event.stopPropagation();EPR.menuFor=null;eprEscalate(\''+t.id+'\')">'+ico('upload_file')+'Escalate to record</button>');
+  it.push('<button onclick="event.stopPropagation();eprResolve(\''+t.id+'\')">'+ico('check')+'Resolve · concern passed</button>');
+  return '<div class="cm" role="menu">'+it.join('')+'</div>';
+}
+function eprMenuFor(id){EPR.menuFor=EPR.menuFor===id?null:id;eprRender();}
+function eprGhosts(){
+  return EPR.threads.filter(t=>t.status==='escalated').map(t=>`
+    <div class="ecard ghost">
+      <div class="th">${ico('upload_file')}Escalated · in the record</div>
+      <div class="tm">${esc(t.msg)}</div>
+      <div class="mt">Filed to Notes · ${t.escAt} · closes at 07:30</div>
+    </div>`).join('');
+}
+function eprCompose(){
+  return `
+  <div class="ecompose">
+    <div class="th" style="display:flex;gap:6px;align-items:center;font-size:9.5px;font-weight:700;letter-spacing:.12em;color:var(--mut);text-transform:uppercase;">${ico('edit_note')}Your read, in your own words</div>
+    <textarea id="ecmsg" maxlength="140" placeholder="e.g. Settles when the bay lights go down after 22:00."></textarea>
+    <div class="ebar"><div id="ecfill"></div></div>
+    <div style="font-size:10px;font-weight:600;color:var(--mut);" id="eclab">0 of 140</div>
+    <div class="ecats" role="group" aria-label="Category">
+      ${Object.keys(CATS).map(k=>'<button id="ecat-'+k+'" aria-pressed="false" onclick="eprPick(\''+k+'\')"><span class="cd" style="background:'+CATS[k].c+'"></span>'+CATS[k].label+'</button>').join('')}
+    </div>
+    <button class="ebtn big" id="ecsetlive" disabled onclick="eprSetLive()">${ico('send')}Set live</button>
+    <button class="ebtn big ghost" onclick="EPR.composing=false;EPR.cat=null;eprRender()">Cancel</button>
+  </div>`;
+}
+function eprWire(){const ta=el('ecmsg');ta.addEventListener('input',eprCheck);ta.focus();eprCheck();}
+function eprCheck(){const n=el('ecmsg').value.length;el('ecfill').style.width=Math.min(100,n/140*100)+'%';el('eclab').textContent=n+' of 140';eprValid();}
+function eprPick(k){EPR.cat=k;Object.keys(CATS).forEach(x=>el('ecat-'+x).setAttribute('aria-pressed',x===k));eprValid();}
+function eprValid(){el('ecsetlive').disabled=!(el('ecmsg').value.trim().length>=4&&EPR.cat);}
+function eprSetLive(){
+  EPR.threads.push({id:'en'+Date.now(),cat:EPR.cat,msg:el('ecmsg').value.trim(),author:'Tom R, RN',time:'22:40',ack:null,anchor:null,status:'live'});
+  EPR.composing=false;EPR.cat=null;eprRender();
+  toast('Thread live. It rides the 07:30 handover and expires with it unless renewed.');
+}
+function eprAck(id){const t=EPR.threads.find(x=>x.id===id);t.ack={by:'Tom R, RN',at:'19:31'};EPR.menuFor=null;eprRender();toast('Received, never agreed. Your judgement stays your own.');}
+function eprResolve(id){EPR.threads.find(x=>x.id===id).status='resolved';EPR.menuFor=null;eprRender();toast('Resolved. Gone from the active set, purged after 72 hours.');}
+function eprFlash(){const p=el('eprNews');if(!p)return;p.classList.remove('flash');void p.offsetWidth;p.classList.add('flash');}
+function eprEscalate(id){
+  const t=EPR.threads.find(x=>x.id===id);EPR.menuFor=null;
+  openModal(`<h3 id="modalTitle">Escalate into the record</h3>
+    <p>The Thread closes and points to its permanent successor. Both names travel: the read's author and the escalating nurse.</p>
+    <div class="epr"><b>EPR note · pre-filled, complete before filing</b><br><br>
+    <b>Patient:</b> Margaret Hale · Bed 6<br>
+    <b>Nursing observation (verbatim Thread):</b> ${esc(t.msg)}<br>
+    <b>Originating author:</b> ${esc(t.author)} · ${t.time}<br>
+    <b>Escalated by:</b> Tom R, RN · 19:32<br>
+    <b>Clinical context:</b> <span style="opacity:.6;">[nurse completes: events, actions, plan]</span></div>
+    <div class="btnrow">
+      <button class="btn" onclick="eprFileEsc('${t.id}')">${ico('upload_file')}File to Notes</button>
+      <button class="btn ghost" onclick="closeModal()">Back</button>
+    </div>`);
+}
+function eprFileEsc(id){
+  const t=EPR.threads.find(x=>x.id===id);t.status='escalated';t.escAt='19:32';
+  closeModal();
+  const list=el('eprNotesList');
+  if(list){
+    const item=document.createElement('div');
+    item.className='enote flash';
+    item.innerHTML='<div class="nh">19:32 · Nursing observation · T. Rowe RN <span class="provo"><span class="k"></span>Escalated from Thread · dual attribution</span></div>'
+      +'<div class="nb">'+esc(t.msg)+' (Originating read: '+esc(t.author)+' 18:40. Escalated after review with on-call team.)</div>';
+    list.prepend(item);
+  }
+  eprRender();
+  toast('Filed to the record. The Thread is closed and now points at its successor.');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.cm')&&!e.target.closest('.kbb')){ if(EPR.menuFor){EPR.menuFor=null;eprRender();} }
+});
+
+/* ================= MODAL / DEMO / ABOUT / BOOT ================= */
+function openModal(html){el('modalBox').innerHTML=html;el('overlay').classList.add('show');document.body.classList.add('lock');const b=el('modalBox').querySelector('button');if(b)b.focus();}
+function closeModal(){el('overlay').classList.remove('show');document.body.classList.remove('lock');}
+el('overlay').addEventListener('click',e=>{e.stopPropagation();if(e.target===el('overlay'))closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMenu();}});
+function openDemo(){
+  openModal(`<h3 id="modalTitle">Demo controls</h3>
+  <p>Jump between scenarios, toggle the downtime edge case, or start over. The mono script panel narrates each step.</p>
+  <div class="stack">
+    <button class="btn ghost" onclick="jumpTo(1)">Scenario 1 · Priya captures a read</button>
+    <button class="btn ghost" onclick="jumpTo(2)">Scenario 2 · The 19:30 handover</button>
+    <button class="btn ghost" onclick="jumpTo(3)">Scenario 3 · Tom inherits the ward</button>
+    <button class="btn ghost" onclick="jumpTo(4)">Scenario 4 · Add context &amp; end of shift</button>
+    <button class="btn quiet" onclick="closeModal();showScript()">Show demo script panel</button>
+    <button class="btn quiet" onclick="closeModal();toggleDowntime()">Edge case · toggle downtime</button>
+    <button class="btn warn" onclick="resetDemo()">Reset everything</button>
+  </div>`);
+}
+function toggleDowntime(){
+  S.downtime=!S.downtime;
+  el('downtimeBanner').style.display=S.downtime?'flex':'none';
+  if(!S.downtime)toast('Service restored. Live Threads re-surface at the next handover with a downtime marker.');
+  else go('ward');
+}
+function jumpTo(n){
+  closeModal();resetState();
+  if(n===1){setUser('priya');S.phase='day';S.clock='18:40';setStep(1);go('ward');}
+  if(n===2){setUser('priya');S.phase='day';S.clock='19:25';seedAlisha();setStep(2);S.fabHo=true;go('ward');}
+  if(n===3){setUser('tom');seedAlisha();relayAll();S.phase='night';S.clock='22:10';setStep(3);go('ward');}
+  if(n===4){setUser('tom');seedAlisha();relayAll();S.phase='night';S.visitedAlisha=true;S.obsEventDone=true;S.obsEscalated=true;S.tomThreadDone=true;
+    const a=S.patients.find(x=>x.id==='alisha');a.news=2;a.vit.rr.v=21;
+    S.clock='06:45';setStep(4);go('endshift');}
+}
+function seedAlisha(){
+  if(!S.threads.some(t=>t.p==='alisha'))
+    S.threads.push({id:uid(),p:'alisha',cat:'comparison',msg:'Quieter than yesterday. Keep an eye overnight.',author:'Priya K, RN',time:'18:42',status:'live',renewals:0,ack:null,esc:null});
+}
+function relayAll(){S.threads.forEach((t,i)=>{if(t.status==='live'){t.status='acknowledged';t.ackm=32+i;t.ack={by:'Tom R, RN',time:'19:'+(32+i)};}});}
+const INIT_T=JSON.stringify(S.threads),INIT_P=JSON.stringify(S.patients);
+function resetState(){
+  S.threads=JSON.parse(INIT_T);S.patients=JSON.parse(INIT_P);
+  Object.assign(S,{hoIndex:0,hoT:0,hoStarted:false,obsEventDone:false,obsEscalated:false,tomThreadDone:false,downtime:false,patientOpen:null,endQueueDone:false,eileenFlag:false,visitedAlisha:false,lintDismissed:false,editTarget:null,fabHo:false});
+  el('downtimeBanner').style.display='none';
+}
+function resetDemo(){closeModal();resetState();setUser('priya');S.phase='day';S.clock='18:40';S.scriptHidden=false;setStep(1);go('ward');}
+function openAbout(){
+  openModal(`<h3 id="modalTitle">About this prototype</h3>
+  <p>A clickable simulation of Thread, the continuity protocol from the IRP In Good Hands. No data leaves this page; everything resets on reload.</p>
+  <div class="stack" style="font-size:12.5px;font-weight:600;">
+    <div class="tilebox" style="padding:15px;"><span class="lbl">Calm surfaces, colored threads</span><p style="margin-top:7px;color:var(--mut);">Patients are identified by name and a large bed anchor on calm, neumorphic cards. Color is reserved for Threads: each category owns one. No photos, no faces.</p></div>
+    <div class="tilebox" style="padding:15px;"><span class="lbl">Interaction model</span><p style="margin-top:7px;color:var(--mut);">Text is paramount: the read leads every card, metadata folds behind Details. Handover relays one Thread at a time in a focus stack, with reminders. The floating bar carries the shift: Patients, End shift, then Begin handover.</p></div>
+    <div class="tilebox" style="padding:15px;"><span class="lbl">Edge cases built in</span><p style="margin-top:7px;color:var(--mut);">140-character bound · clinical-value lint · five-Thread cap · skip-with-consequence at handover · renewal capped at three, with the reason shown · discharge routing to the transfer letter · downtime degrading to verbal handover.</p></div>
+    <div class="tilebox" style="padding:15px;"><span class="lbl">Accessibility</span><p style="margin-top:7px;color:var(--mut);">Dark and light themes, both contrast-audited · grid and list layouts · keyboard operation with visible focus · targets 44px and above · aria-live announcements · disabled controls always say why and how to enable.</p></div>
+  </div>
+  <div class="btnrow" style="margin-top:13px;"><button class="btn" onclick="closeModal()">Back to the ward</button></div>`);
+}
+setUser('priya');S.phase='day';S.clock='18:40';setStep(1);go('ward');
+</script>
+</body>
+</html>
